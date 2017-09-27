@@ -21,6 +21,9 @@
     <ClCompile Include="MYUT.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="RendererDevice.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="math3d.hpp">
@@ -33,6 +36,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDevice.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

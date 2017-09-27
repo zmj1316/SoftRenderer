@@ -39,6 +39,7 @@ protected:
 		void* m_WindowMsgFuncUserContext;
 		LPMYUTCALLBACKDRAW m_DrawFunc;
 		bool m_InSizeMove;
+		LPMYUTCALLBACKRESIZE m_ResizeFunc;
 	};
 
 	STATE m_state;
@@ -63,6 +64,7 @@ public:
 	GET_SET_ACCESSOR(LPMYUTCALLBACKMSGPROC, WindowMsgFunc);
 	GET_SET_ACCESSOR(void*, WindowMsgFuncUserContext);
 	GET_SET_ACCESSOR(LPMYUTCALLBACKDRAW, DrawFunc);
+	GET_SET_ACCESSOR(LPMYUTCALLBACKRESIZE, ResizeFunc);
 	GET_SET_ACCESSOR(bool, InSizeMove);
 
 };
@@ -149,6 +151,20 @@ HWND WINAPI MYUTGetHWNDFocus() { return GetMYUTState().GetHWNDDeviceWindowed(); 
 
 void __stdcall MYUTSetCallBackDraw(LPMYUTCALLBACKDRAW pCallback) { GetMYUTState().SetDrawFunc(pCallback); }
 
+void __stdcall MYUTSetCallBackResize(LPMYUTCALLBACKRESIZE pCallback) { GetMYUTState().SetResizeFunc(pCallback); }
+
+void CheckForWindowSizeChange()
+{
+	RECT rcCurrentClient;
+	GetClientRect(MYUTGetHWND(), &rcCurrentClient);
+	LPMYUTCALLBACKRESIZE pFunc = GetMYUTState().GetResizeFunc();
+	if(pFunc)
+	{
+		int width = rcCurrentClient.right - rcCurrentClient.left;
+		int height = rcCurrentClient.bottom - rcCurrentClient.top;
+		pFunc(width, height);
+	}
+}
 
 LRESULT CALLBACK MyStaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -172,6 +188,12 @@ LRESULT CALLBACK MyStaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	case WM_ENTERSIZEMOVE:
 		// Halt frame movement while the app is sizing or moving
 		GetMYUTState().SetInSizeMove(true);
+		break;
+	case WM_EXITSIZEMOVE:
+		GetMYUTState().SetInSizeMove(false);
+		CheckForWindowSizeChange();
+		break;
+	case WM_PAINT:
 		break;
 	case WM_SIZE:
 		if (SIZE_MINIMIZED == wParam)
@@ -233,6 +255,13 @@ LRESULT CALLBACK MyStaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 
 		break;
+	}
+	{
+		LPMYUTCALLBACKDRAW pDraw = GetMYUTState().GetDrawFunc();
+		if (pDraw)
+		{
+			pDraw();
+		}
 	}
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
