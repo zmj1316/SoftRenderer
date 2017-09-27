@@ -119,12 +119,14 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MYUT.cpp" />
+    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RendererDevice.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="helpers.hpp" />
     <ClInclude Include="math3d.hpp" />
     <ClInclude Include="MYUT.hpp" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="RendererDevice.hpp" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
