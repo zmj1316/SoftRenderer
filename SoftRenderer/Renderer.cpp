@@ -37,8 +37,8 @@ void Renderer::RasterizeTriangle(int index)
 	for (int i = 0; i < 3; ++i)
 	{
 		vertices[i] = vb_after_vs_[tri.indices[i]];
-		screen_cords[i].x = (vertices[i].pos.x + 1) / 2 * width_;
-		screen_cords[i].y = (vertices[i].pos.y + 1) / 2 * height_;
+		screen_cords[i].data()[0] = (vertices[i].pos.data()[0] + 1) / 2 * width_;
+		screen_cords[i].data()[1] = (vertices[i].pos.data()[1] + 1) / 2 * height_;
 	}
 	struct Rect
 	{
@@ -53,10 +53,10 @@ void Renderer::RasterizeTriangle(int index)
 
 	for (int i = 0; i < 3; ++i)
 	{
-		if (screen_cords[i].x < rect.left) rect.left = screen_cords[i].x;
-		if (screen_cords[i].x > rect.right) rect.right = screen_cords[i].x;
-		if (screen_cords[i].y < rect.top) rect.top = screen_cords[i].y;
-		if (screen_cords[i].x > rect.bottom) rect.bottom = screen_cords[i].y;
+		if (screen_cords[i].data()[0] < rect.left) rect.left = screen_cords[i].data()[0];
+		if (screen_cords[i].data()[0] > rect.right) rect.right = screen_cords[i].data()[0];
+		if (screen_cords[i].data()[1] < rect.top) rect.top = screen_cords[i].data()[1];
+		if (screen_cords[i].data()[1] > rect.bottom) rect.bottom = screen_cords[i].data()[1];
 	}
 
 	rect.bottom = min(rect.bottom, height_);
