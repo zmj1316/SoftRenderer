@@ -3,17 +3,31 @@
 #include "helpers.hpp"
 #include "MYUT.hpp"
 #include "RendererDevice.hpp"
+#include "Renderer.h"
 
 GDIDevice device;
+Renderer renderer;
+
+struct vertex_
+{
+	vec4 pos;
+};
+std::vector<vertex_> vb;
+std::vector<int> ib;
+Renderer::ConstantBuffer cb;
+
 
 LRESULT CALLBACK draw()
 {
+
+	renderer.render(vb, ib, cb, device);
 	device.RenderToScreen();
 	return S_OK;
 }
 
 LRESULT CALLBACK resize(int w, int h)
 {
+	renderer.resizeRenderTarget(w, h);
 	device.Resize(w, h);
 	return S_OK;
 }

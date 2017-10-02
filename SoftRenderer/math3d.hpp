@@ -4,7 +4,7 @@
 using namespace Eigen;
 
 using mat4 = Eigen::Matrix4f;
-using vec4 = Eigen::Vector4f;
-using vec3 = Eigen::Vector3f;
-using vec2 = Eigen::Vector2f;
+using vec4 = Eigen::Matrix<float, 1, 4>;
+using vec3 = Eigen::Matrix<float, 1, 3>;
+using vec2 = Eigen::Matrix<float, 1, 2>;
 
