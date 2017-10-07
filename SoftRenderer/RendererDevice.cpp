@@ -48,7 +48,7 @@ void GDIDevice::Resize(int width, int height)
 void GDIDevice::DrawPoint(int x, int y, uint32_t color)
 {
 	MY_ASSERT( (x < width_) && (y < height_));
-	buffer_[x + y * height_] = color;
+	buffer_[x + y * width_] = color;
 }
 
 void GDIDevice::RenderToScreen()

@@ -40,6 +40,7 @@ protected:
 		LPMYUTCALLBACKDRAW m_DrawFunc;
 		bool m_InSizeMove;
 		LPMYUTCALLBACKRESIZE m_ResizeFunc;
+		bool m_Keys[256];
 	};
 
 	STATE m_state;
@@ -67,6 +68,8 @@ public:
 	GET_SET_ACCESSOR(LPMYUTCALLBACKRESIZE, ResizeFunc);
 	GET_SET_ACCESSOR(bool, InSizeMove);
 
+
+	GET_ACCESSOR(bool*, Keys);
 };
 
 MYUTState* g_pMYUTState = nullptr;
@@ -153,12 +156,14 @@ void __stdcall MYUTSetCallBackDraw(LPMYUTCALLBACKDRAW pCallback) { GetMYUTState(
 
 void __stdcall MYUTSetCallBackResize(LPMYUTCALLBACKRESIZE pCallback) { GetMYUTState().SetResizeFunc(pCallback); }
 
+bool* __stdcall MYUTGetKeys() { return GetMYUTState().GetKeys(); }
+
 void CheckForWindowSizeChange()
 {
 	RECT rcCurrentClient;
 	GetClientRect(MYUTGetHWND(), &rcCurrentClient);
 	LPMYUTCALLBACKRESIZE pFunc = GetMYUTState().GetResizeFunc();
-	if(pFunc)
+	if (pFunc)
 	{
 		int width = rcCurrentClient.right - rcCurrentClient.left;
 		int height = rcCurrentClient.bottom - rcCurrentClient.top;
@@ -178,6 +183,19 @@ LRESULT CALLBACK MyStaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		                                   GetMYUTState().GetWindowMsgFuncUserContext());
 		if (bNoFurtherProcessing)
 			return nResult;
+	}
+
+	// Consolidate the keyboard messages and pass them to the app's keyboard callback
+	if (uMsg == WM_KEYDOWN ||
+		uMsg == WM_SYSKEYDOWN ||
+		uMsg == WM_KEYUP ||
+		uMsg == WM_SYSKEYUP)
+	{
+		bool bKeyDown = (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN);
+		DWORD dwMask = (1 << 29);
+		bool bAltDown = ((lParam & dwMask) != 0);
+		auto keys = GetMYUTState().GetKeys();
+		keys[(BYTE)(wParam & 0xFF)] = bKeyDown;
 	}
 
 	switch (uMsg)

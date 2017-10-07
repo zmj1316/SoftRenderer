@@ -25,7 +25,6 @@ public:
 	
 
 protected:
-	uint32_t* buffer_;
 	int width_;
 	int height_;
 };
@@ -46,6 +45,7 @@ public:
 
 	void RenderToScreen() override;
 protected:
+	uint32_t* buffer_;
 	HDC hDC;
 	HDC Memhdc;
 	HBITMAP Membitmap;
