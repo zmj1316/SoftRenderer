@@ -37,7 +37,7 @@ public:
 
 static vec3 up{0,1,0};
 static vec3 at{0,0,0};
-static vec3 eye{0,1,5};
+static vec3 eye{3,0,5};
 float height, width;
 
 void init()
@@ -148,7 +148,7 @@ void calcCamera()
 	//	};
 	mat4 viewm, projm;
 	viewm = mat4::lookAtLH(eye, at, up);
-	projm = mat4::perspectiveFovLH(3.14 / 3, width / height, 1, 100);
+	projm = mat4::perspectiveFovLH(3.14 / 3, width / height, 0.5, 100);
 	//	memcpy(&viewm, view, sizeof(view));
 	//	memcpy(&projm, proj, sizeof(proj));
 	cb.WVP = viewm * projm;
@@ -175,6 +175,19 @@ LRESULT CALLBACK draw()
 		eye.x += 0.1;
 	if (MYUTGetKeys()['D'])
 		eye.x -= 0.1;
+
+	if (MYUTGetKeys()['Q'])
+	{
+		auto dir = (eye - at).normalized();
+		eye += dir * 0.1;
+		at += dir * 0.1;
+	}
+	if (MYUTGetKeys()['E'])
+	{
+		auto dir = (eye - at).normalized();
+		eye -= dir * 0.1;
+		at -= dir * 0.1;
+	}
 	calcCamera();
 	renderer.render(vb, ib, cb, device);
 	device.RenderToScreen();

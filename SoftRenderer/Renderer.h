@@ -36,11 +36,11 @@ public:
 		//		static const float max = DBL_MAX;
 		for (auto&& value : zbuffer)
 		{
-			value = DBL_MAX;
+			value = 1.0f;
 		}
 		IaStage(ib);
 		VSStage(vb);
-		//		EarlyZ();
+		EarlyZ();
 		PSStage(render_target);
 	}
 
@@ -54,6 +54,7 @@ protected:
 	{
 		vec4 pos;
 		vec2 uv;
+		//		vec4 depth_pos;
 	};
 
 	void Clear();
@@ -70,16 +71,19 @@ protected:
 		{
 			vec4 origin_pos = vb[i].pos;
 			origin_pos.w = 1;
-			vb_after_vs_[i].pos = origin_pos * cb_.WVP;
-			//			vb_after_vs_[i].pos = vb_after_vs_[i].pos * cb_.proj;
-			//			vb_after_vs_[i].pos = origin_pos * cb_.WVP;
+			//vb_after_vs_[i].pos = origin_pos * cb_.WVP;
+			//vb_after_vs_[i].depth_pos = vb_after_vs_[i].pos;
+			vb_after_vs_[i].pos = origin_pos * cb_.view;
+			vb_after_vs_[i].pos = vb_after_vs_[i].pos * cb_.proj;
 			//				vb_after_vs_[i].depthPos = origin_pos * cb_.WVP;
-
+			bool error = vb_after_vs_[i].pos.z < 0 && vb_after_vs_[i].pos.w < 0;
 			// ¹éÒ»»¯
 			vb_after_vs_[i].pos.x = vb_after_vs_[i].pos.x / vb_after_vs_[i].pos.w;
 			vb_after_vs_[i].pos.y = vb_after_vs_[i].pos.y / vb_after_vs_[i].pos.w;
 			vb_after_vs_[i].pos.z = vb_after_vs_[i].pos.z / vb_after_vs_[i].pos.w;
-//			vb_after_vs_[i].pos.w = vb_after_vs_[i].pos.w / vb_after_vs_[i].pos.w;
+			if (error)
+				vb_after_vs_[i].pos.w = -DBL_MAX;
+			//			vb_after_vs_[i].pos.w = vb_after_vs_[i].pos.w / vb_after_vs_[i].pos.w;
 			//			vb_after_vs_[i].pos.data()[0] = vb_after_vs_[i].pos.data()[0] / vb_after_vs_[i].pos.data()[3];
 			//			vb_after_vs_[i].pos.data()[1] = vb_after_vs_[i].pos.data()[1] / vb_after_vs_[i].pos.data()[3];
 			//			vb_after_vs_[i].pos.data()[2] = vb_after_vs_[i].pos.data()[2] / vb_after_vs_[i].pos.data()[3];
@@ -195,9 +199,9 @@ protected:
 				//				auto lambda1 = numerator1_1 * (x - x3) + numerator1_2 * (y - y3);
 				//				auto lambda2 = numerator2_1 * (x - x3) + numerator2_2 * (y - y3);
 				//				auto lambda3 = 1 - lambda1 - lambda2;
-				const bool is_in = 
+				const bool is_in =
 					lambda1 < 1.0f - DBL_EPSILON && lambda1 > DBL_EPSILON &&
-					lambda2 < 1.0f - DBL_EPSILON && lambda2 > DBL_EPSILON && 
+					lambda2 < 1.0f - DBL_EPSILON && lambda2 > DBL_EPSILON &&
 					lambda3 < 1.0f - DBL_EPSILON && lambda3 > DBL_EPSILON;
 				if (is_in)
 				{
@@ -208,16 +212,19 @@ protected:
 
 					// Z-PASS
 					auto& z = interpolated.pos.z;
-					if (z > 0 && z < 1 && z <= zbuffer[y * width_ + x])
+					if (z > 0 && z < 1 && z <= zbuffer[y * width_ + x] > 0)
 					{
-						zbuffer[y * width_ + x] = z;
 						auto zr =
-							lambda1 / vertices[0].pos.z +
-							lambda2 / vertices[1].pos.z +
-							lambda3 / vertices[2].pos.z;
-						auto lambda1_c = lambda1 / vertices[0].pos.z / zr;
-						auto lambda2_c = lambda2 / vertices[1].pos.z / zr;
-						auto lambda3_c = lambda3 / vertices[2].pos.z / zr;
+							fabs(lambda1 / vertices[0].pos.z) +
+							fabs(lambda2 / vertices[1].pos.z) +
+							fabs(lambda3 / vertices[2].pos.z);
+						auto lambda1_c = lambda1 * vertices[0].pos.z / zr ;
+						auto lambda2_c = lambda2 * vertices[1].pos.z / zr;
+						auto lambda3_c = lambda3 * vertices[2].pos.z / zr;
+						auto interpolated_w = vertices[0].pos.w * lambda1_c + vertices[1].pos.w * lambda2_c + vertices[2].pos.w * lambda3_c;
+						if (interpolated_w <= 0)
+							continue;
+						zbuffer[y * width_ + x] = z;
 						interpolated.uv = vertices[0].uv * lambda1_c + vertices[1].uv * lambda2_c + vertices[2].uv * lambda3_c;
 						if constexpr (!std::is_void<decltype(PixelShader::shading(interpolated))>::value)
 						{
@@ -225,7 +232,7 @@ protected:
 							render_target.DrawPoint(x, y, ret);
 						}
 					}
-//
+					//
 					if (!in_line)
 						in_line = true;
 				}

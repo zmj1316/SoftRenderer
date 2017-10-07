@@ -113,7 +113,18 @@ HWND WINAPI MYUTGetHWND()
 }
 
 
-HRESULT __stdcall MYUTMainLoop(HACCEL hAccel)
+void MYUTRender3DEnvironment()
+{
+	{
+		LPMYUTCALLBACKDRAW pDraw = GetMYUTState().GetDrawFunc();
+		if (pDraw)
+		{
+			pDraw();
+		}
+	}
+}
+
+HRESULT _stdcall MYUTMainLoop(HACCEL hAccel)
 {
 	HWND hWnd = MYUTGetHWND();
 	// Now we're ready to receive and process Windows messages.
@@ -140,7 +151,7 @@ HRESULT __stdcall MYUTMainLoop(HACCEL hAccel)
 		else
 		{
 			// Render a frame during idle time (no messages are waiting)
-			//DXUTRender3DEnvironment();
+			MYUTRender3DEnvironment();
 		}
 	}
 
@@ -274,13 +285,7 @@ LRESULT CALLBACK MyStaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 		break;
 	}
-	{
-		LPMYUTCALLBACKDRAW pDraw = GetMYUTState().GetDrawFunc();
-		if (pDraw)
-		{
-			pDraw();
-		}
-	}
+
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
