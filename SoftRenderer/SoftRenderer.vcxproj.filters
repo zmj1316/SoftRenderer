@@ -44,7 +44,7 @@
     <ClInclude Include="RendererDevice.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer.h">
+    <ClInclude Include="Renderer.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

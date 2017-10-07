@@ -3,7 +3,7 @@
 #include "helpers.hpp"
 #include "MYUT.hpp"
 #include "RendererDevice.hpp"
-#include "Renderer.h"
+#include "Renderer.hpp"
 
 GDIDevice device;
 Renderer renderer;

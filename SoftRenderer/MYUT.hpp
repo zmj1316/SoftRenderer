@@ -1,5 +1,4 @@
 #pragma once
-#include "helpers.hpp"
 #include <windows.h>
 
 HRESULT WINAPI MYUTCreateWindow(const WCHAR* strWindowTitle = L"MYUT Windows", HINSTANCE hInstance = nullptr,

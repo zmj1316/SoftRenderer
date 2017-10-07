@@ -1,4 +1,5 @@
 #include "MYUT.hpp"
+#include "helpers.hpp"
 
 //--------------------------------------------------------------------------------------
 // Thread safety
@@ -204,7 +205,7 @@ LRESULT CALLBACK MyStaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	{
 		bool bKeyDown = (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN);
 		DWORD dwMask = (1 << 29);
-		bool bAltDown = ((lParam & dwMask) != 0);
+//		bool bAltDown = ((lParam & dwMask) != 0);
 		auto keys = GetMYUTState().GetKeys();
 		keys[(BYTE)(wParam & 0xFF)] = bKeyDown;
 	}

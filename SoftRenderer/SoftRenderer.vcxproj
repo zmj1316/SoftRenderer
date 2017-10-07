@@ -146,7 +146,7 @@
     <ClInclude Include="helpers.hpp" />
     <ClInclude Include="math3d.hpp" />
     <ClInclude Include="MYUT.hpp" />
-    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="RendererDevice.hpp" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

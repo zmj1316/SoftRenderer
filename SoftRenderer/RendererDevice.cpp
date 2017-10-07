@@ -1,9 +1,10 @@
 #ifdef _WIN32
+#include "helpers.hpp"
 #include "RendererDevice.hpp"
 #include "MYUT.hpp"
 
 
-GDIDevice::GDIDevice(): hDC(nullptr), Memhdc(nullptr), Membitmap(nullptr), now_bitmap(nullptr)
+GDIDevice::GDIDevice(): buffer_(nullptr), hDC(nullptr), Memhdc(nullptr), Membitmap(nullptr), now_bitmap(nullptr)
 {
 }
 

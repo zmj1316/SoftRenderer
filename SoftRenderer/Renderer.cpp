@@ -1,13 +1,21 @@
-#include "Renderer.h"
+#include "Renderer.hpp"
 
 
-Renderer::Renderer()
+Renderer::Renderer(): width_(0), height_(0)
 {
 }
 
 
 Renderer::~Renderer()
 {
+}
+
+void Renderer::Clear()
+{
+	for (auto&& value : zbuffer)
+	{
+		value = 1.0f;
+	}
 }
 
 void Renderer::IaStage(const std::vector<int>& ib)

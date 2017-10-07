@@ -3,15 +3,10 @@
 #include "helpers.hpp"
 #include <vector>
 
-static int a = 0xFF000000;
-
 
 class Renderer
 {
 public:
-	Renderer();
-	~Renderer();
-
 	struct ConstantBuffer
 	{
 		mat4 WVP; // World View Projection
@@ -20,6 +15,9 @@ public:
 		vec3 lightPos;
 		vec3 viewPos;
 	};
+
+	Renderer();
+	~Renderer();
 
 	void resizeRenderTarget(int width, int height)
 	{
@@ -33,11 +31,7 @@ public:
 	            RenderTarget& render_target)
 	{
 		cb_ = cb;
-		//		static const float max = DBL_MAX;
-		for (auto&& value : zbuffer)
-		{
-			value = 1.0f;
-		}
+		Clear();
 		IaStage(ib);
 		VSStage(vb);
 		EarlyZ();
@@ -45,6 +39,8 @@ public:
 	}
 
 protected:
+
+
 	struct polygon_
 	{
 		int indices[3];
@@ -56,6 +52,13 @@ protected:
 		vec2 uv;
 		//		vec4 depth_pos;
 	};
+
+	ConstantBuffer cb_;
+	std::vector<polygon_> triangles_;
+	std::vector<vertex_output> vb_after_vs_;
+	std::vector<float> zbuffer;
+	int width_;
+	int height_;
 
 	void Clear();
 	void IaStage(const std::vector<int>& ib);
@@ -71,8 +74,7 @@ protected:
 		{
 			vec4 origin_pos = vb[i].pos;
 			origin_pos.w = 1;
-			//vb_after_vs_[i].pos = origin_pos * cb_.WVP;
-			//vb_after_vs_[i].depth_pos = vb_after_vs_[i].pos;
+			vb_after_vs_[i].pos = origin_pos * cb_.view;
 			vb_after_vs_[i].pos = origin_pos * cb_.view;
 			vb_after_vs_[i].pos = vb_after_vs_[i].pos * cb_.proj;
 			//				vb_after_vs_[i].depthPos = origin_pos * cb_.WVP;
@@ -83,11 +85,6 @@ protected:
 			vb_after_vs_[i].pos.z = vb_after_vs_[i].pos.z / vb_after_vs_[i].pos.w;
 			if (error)
 				vb_after_vs_[i].pos.w = -DBL_MAX;
-			//			vb_after_vs_[i].pos.w = vb_after_vs_[i].pos.w / vb_after_vs_[i].pos.w;
-			//			vb_after_vs_[i].pos.data()[0] = vb_after_vs_[i].pos.data()[0] / vb_after_vs_[i].pos.data()[3];
-			//			vb_after_vs_[i].pos.data()[1] = vb_after_vs_[i].pos.data()[1] / vb_after_vs_[i].pos.data()[3];
-			//			vb_after_vs_[i].pos.data()[2] = vb_after_vs_[i].pos.data()[2] / vb_after_vs_[i].pos.data()[3];
-
 			if constexpr (HAS_MEMBER(T, uv))
 			{
 				vb_after_vs_[i].uv = vb[i].uv;
@@ -100,16 +97,14 @@ protected:
 	template <class RenderTarget>
 	void PSStage(RenderTarget& render_target)
 	{
+		static int a = 0xFF000000;
+
 		class PS
 		{
 		public:
 			static int shading(vertex_output& x)
 			{
 				return a;
-				//				int a1 = int(abs(x.pos.x) * 200) & 0xFF;
-				//				int a2 = int(abs(x.pos.y) * 200) & 0xFF;
-				//				int a3 = int(abs(x.pos.z) * 200) & 0xFF;
-				//				return ++a;
 			}
 		};
 		for (int i = 0; i < triangles_.size(); ++i)
@@ -156,10 +151,6 @@ protected:
 		rect.left = max(rect.left, 0);
 		rect.right = min(rect.right, width_);
 
-		//	static std::vector<uint8_t> in_line;
-		//	in_line.resize(height_);
-		//	std::vector<uint8_t> out_line;
-
 		const auto& x1 = screen_cords[0].x;
 		const auto& x2 = screen_cords[1].x;
 		const auto& x3 = screen_cords[2].x;
@@ -177,9 +168,6 @@ protected:
 
 		vec2 v0 = screen_cords[1] - screen_cords[0];
 		vec2 v1 = screen_cords[2] - screen_cords[0];
-		//		float d00 = v0.dot(v0);
-		//		float d01 = v0.dot(v1);
-		//		float d11 = v1.dot(v1);
 		float denom = v0.x * v1.y - v1.x * v0.y;
 		float inv_denom = 1.0f / denom;
 
@@ -195,10 +183,6 @@ protected:
 				auto lambda3 = (v0.x * v2.y - v2.x * v0.y) * inv_denom;
 				auto lambda1 = 1.0f - lambda2 - lambda3;
 
-
-				//				auto lambda1 = numerator1_1 * (x - x3) + numerator1_2 * (y - y3);
-				//				auto lambda2 = numerator2_1 * (x - x3) + numerator2_2 * (y - y3);
-				//				auto lambda3 = 1 - lambda1 - lambda2;
 				const bool is_in =
 					lambda1 < 1.0f - DBL_EPSILON && lambda1 > DBL_EPSILON &&
 					lambda2 < 1.0f - DBL_EPSILON && lambda2 > DBL_EPSILON &&
@@ -218,10 +202,11 @@ protected:
 							fabs(lambda1 / vertices[0].pos.z) +
 							fabs(lambda2 / vertices[1].pos.z) +
 							fabs(lambda3 / vertices[2].pos.z);
-						auto lambda1_c = lambda1 * vertices[0].pos.z / zr ;
+						auto lambda1_c = lambda1 * vertices[0].pos.z / zr;
 						auto lambda2_c = lambda2 * vertices[1].pos.z / zr;
 						auto lambda3_c = lambda3 * vertices[2].pos.z / zr;
-						auto interpolated_w = vertices[0].pos.w * lambda1_c + vertices[1].pos.w * lambda2_c + vertices[2].pos.w * lambda3_c;
+						auto interpolated_w = vertices[0].pos.w * lambda1_c + vertices[1].pos.w * lambda2_c + vertices[2].pos.w *
+							lambda3_c;
 						if (interpolated_w <= 0)
 							continue;
 						zbuffer[y * width_ + x] = z;
@@ -232,7 +217,6 @@ protected:
 							render_target.DrawPoint(x, y, ret);
 						}
 					}
-					//
 					if (!in_line)
 						in_line = true;
 				}
@@ -243,12 +227,4 @@ protected:
 			}
 		}
 	}
-
-
-	ConstantBuffer cb_;
-	std::vector<polygon_> triangles_;
-	std::vector<vertex_output> vb_after_vs_;
-	std::vector<float> zbuffer;
-	int width_;
-	int height_;
 };
