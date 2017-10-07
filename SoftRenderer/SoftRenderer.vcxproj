@@ -139,7 +139,6 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MYUT.cpp" />
-    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RendererDevice.cpp" />
   </ItemGroup>
   <ItemGroup>

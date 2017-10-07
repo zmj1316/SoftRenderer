@@ -4,17 +4,21 @@
 #include <vector>
 
 
+
+template<typename ConstantBuffer, class VertexOutput, class PixelShader>
 class Renderer
 {
 public:
-	struct ConstantBuffer
-	{
-		mat4 WVP; // World View Projection
-		mat4 view; // World View Projection
-		mat4 proj; // World View Projection
-		vec3 lightPos;
-		vec3 viewPos;
-	};
+//	struct ConstantBuffer
+//	{
+//		mat4 WVP; // World View Projection
+//		mat4 view; // World View Projection
+//		mat4 proj; // World View Projection
+//		vec3 lightPos;
+//		vec3 viewPos;
+//	};
+
+
 
 	Renderer();
 	~Renderer();
@@ -46,16 +50,11 @@ protected:
 		int indices[3];
 	};
 
-	struct vertex_output
-	{
-		vec4 pos;
-		vec2 uv;
-		//		vec4 depth_pos;
-	};
+
 
 	ConstantBuffer cb_;
 	std::vector<polygon_> triangles_;
-	std::vector<vertex_output> vb_after_vs_;
+	std::vector<VertexOutput> vb_after_vs_;
 	std::vector<float> zbuffer;
 	int width_;
 	int height_;
@@ -74,9 +73,7 @@ protected:
 		{
 			vec4 origin_pos = vb[i].pos;
 			origin_pos.w = 1;
-			vb_after_vs_[i].pos = origin_pos * cb_.view;
-			vb_after_vs_[i].pos = origin_pos * cb_.view;
-			vb_after_vs_[i].pos = vb_after_vs_[i].pos * cb_.proj;
+			vb_after_vs_[i].pos = origin_pos * cb_.WVP;
 			//				vb_after_vs_[i].depthPos = origin_pos * cb_.WVP;
 			bool error = vb_after_vs_[i].pos.z < 0 && vb_after_vs_[i].pos.w < 0;
 			// ¹éÒ»»¯
@@ -97,29 +94,18 @@ protected:
 	template <class RenderTarget>
 	void PSStage(RenderTarget& render_target)
 	{
-		static int a = 0xFF000000;
-
-		class PS
-		{
-		public:
-			static int shading(vertex_output& x)
-			{
-				return a;
-			}
-		};
 		for (int i = 0; i < triangles_.size(); ++i)
 		{
-			a = (0xFF * (i & 4) << 16) | (0xFF * (i & 2) << 8) | (0xFF * (i & 1));
-			RasterizeTriangle<PS>(i, render_target);
+			RasterizeTriangle<PixelShader>(i, render_target);
 		}
 	}
 
 
-	template <typename PixelShader, class RenderTarget>
+	template <typename _PixelShader, class RenderTarget>
 	void RasterizeTriangle(int index, RenderTarget& render_target)
 	{
 		auto& tri = triangles_[index];
-		vertex_output vertices[3];
+		VertexOutput vertices[3];
 		vec2 screen_cords[3];
 		for (int i = 0; i < 3; ++i)
 		{
@@ -190,7 +176,7 @@ protected:
 				if (is_in)
 				{
 					// do
-					vertex_output interpolated;
+					VertexOutput interpolated;
 					interpolated.pos = vertices[0].pos * lambda1 + vertices[1].pos * lambda2 + vertices[2].pos * lambda3;
 
 
@@ -211,9 +197,9 @@ protected:
 							continue;
 						zbuffer[y * width_ + x] = z;
 						interpolated.uv = vertices[0].uv * lambda1_c + vertices[1].uv * lambda2_c + vertices[2].uv * lambda3_c;
-						if constexpr (!std::is_void<decltype(PixelShader::shading(interpolated))>::value)
+						if constexpr (!std::is_void<decltype(_PixelShader::shading(interpolated, cb_))>::value)
 						{
-							auto ret = PixelShader::shading(interpolated);
+							auto ret = _PixelShader::shading(interpolated, cb_);
 							render_target.DrawPoint(x, y, ret);
 						}
 					}
@@ -228,3 +214,58 @@ protected:
 		}
 	}
 };
+
+
+
+
+template<typename ConstantBuffer, class VertexOutput, class PixelShader>
+Renderer<ConstantBuffer, VertexOutput, PixelShader>::Renderer() : width_(0), height_(0)
+{
+}
+
+
+template<typename ConstantBuffer, class VertexOutput, class PixelShader>
+Renderer<ConstantBuffer, VertexOutput, PixelShader>::~Renderer()
+{
+}
+
+template<typename ConstantBuffer, class VertexOutput, class PixelShader>
+void Renderer<ConstantBuffer, VertexOutput, PixelShader>::Clear()
+{
+	for (auto&& value : zbuffer)
+	{
+		value = 1.0f;
+	}
+}
+
+template<typename ConstantBuffer, class VertexOutput, class PixelShader>
+void Renderer<ConstantBuffer, VertexOutput, PixelShader>::IaStage(const std::vector<int>& ib)
+{
+	MY_ASSERT((ib.size() % 3) == 0);
+	triangles_.resize(ib.size() / 3);
+	for (int i = 0; i < triangles_.size(); ++i)
+	{
+		for (int r = 0; r < 3; ++r)
+		{
+			triangles_[i].indices[r] = ib[i * 3 + r];
+		}
+	}
+}
+
+template<typename ConstantBuffer, class VertexOutput, class PixelShader>
+void Renderer<ConstantBuffer,VertexOutput, PixelShader>::EarlyZ()
+{
+	class EmptyPASS
+	{
+	public:
+		static void shading(VertexOutput& x, ConstantBuffer& cb)
+		{
+		}
+	};
+
+	for (int i = 0; i < triangles_.size(); ++i)
+	{
+		auto empry = EmptyPASS();
+		RasterizeTriangle<EmptyPASS>(i, empry);
+	}
+}
