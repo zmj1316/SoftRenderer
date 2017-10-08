@@ -49,7 +49,7 @@ ConstantBuffer cb;
 static vec3 up{0,1,0};
 static vec3 at{0,0,0};
 static vec3 eye{3,0,5};
-float height, width;
+int height, width;
 
 Renderer<ConstantBuffer, vertex_output, PixelShader> renderer;
 

@@ -74,14 +74,10 @@ protected:
 			vec4 origin_pos = vb[i].pos;
 			origin_pos.w = 1;
 			vb_after_vs_[i].pos = origin_pos * cb_.WVP;
-			//				vb_after_vs_[i].depthPos = origin_pos * cb_.WVP;
-			bool error = vb_after_vs_[i].pos.z < 0 && vb_after_vs_[i].pos.w < 0;
 			// ¹éÒ»»¯
 			vb_after_vs_[i].pos.x = vb_after_vs_[i].pos.x / vb_after_vs_[i].pos.w;
 			vb_after_vs_[i].pos.y = vb_after_vs_[i].pos.y / vb_after_vs_[i].pos.w;
 			vb_after_vs_[i].pos.z = vb_after_vs_[i].pos.z / vb_after_vs_[i].pos.w;
-			if (error)
-				vb_after_vs_[i].pos.w = -DBL_MAX;
 			if constexpr (HAS_MEMBER(T, uv))
 			{
 				vb_after_vs_[i].uv = vb[i].uv;
@@ -182,8 +178,14 @@ protected:
 
 					// Z-PASS
 					auto& z = interpolated.pos.z;
-					if (z > 0 && z < 1 && z <= zbuffer[y * width_ + x] > 0)
+					if (z > 0 && z < 1 && z <= zbuffer[y * width_ + x])
 					{
+						if (
+							vertices[0].pos.w < 0 ||
+							vertices[1].pos.w < 0 ||
+							vertices[2].pos.w < 0
+							)
+							continue;
 						auto zr =
 							fabs(lambda1 / vertices[0].pos.z) +
 							fabs(lambda2 / vertices[1].pos.z) +
@@ -191,10 +193,6 @@ protected:
 						auto lambda1_c = lambda1 * vertices[0].pos.z / zr;
 						auto lambda2_c = lambda2 * vertices[1].pos.z / zr;
 						auto lambda3_c = lambda3 * vertices[2].pos.z / zr;
-						auto interpolated_w = vertices[0].pos.w * lambda1_c + vertices[1].pos.w * lambda2_c + vertices[2].pos.w *
-							lambda3_c;
-						if (interpolated_w <= 0)
-							continue;
 						zbuffer[y * width_ + x] = z;
 						interpolated.uv = vertices[0].uv * lambda1_c + vertices[1].uv * lambda2_c + vertices[2].uv * lambda3_c;
 						if constexpr (!std::is_void<decltype(_PixelShader::shading(interpolated, cb_))>::value)
