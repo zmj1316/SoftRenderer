@@ -6,14 +6,18 @@
 #include "Renderer.hpp"
 #include "shaders.hpp"
 
+
+LARGE_INTEGER t0, t1, t2, tf;
+
+
 GDIDevice device;
 
 #pragma pack(16)
 struct vertex_
 {
 	vec4 pos;
-
-	vertex_(float x, float y, float z, float w): pos(x, y, z, w)
+	vec2 uv;
+	vertex_(float x, float y, float z, float u,float v): pos(x, y, z, 1), uv(u,v)
 	{
 	}
 
@@ -42,35 +46,40 @@ Renderer<ConstantBuffer, VertexShader, PixelShader> renderer;
 
 void init()
 {
+	QueryPerformanceFrequency(&tf);
+
+
 	vb =
 	{
-		{-1.0f, 1.0f, -1.0f, 1},
-		{1.0f, 1.0f, -1.0f,1},
-		{1.0f, 1.0f, 1.0f ,1},
-		{-1.0f, 1.0f, 1.0f, 1},
-		{-1.0f, -1.0f, -1.0f, 1},
-		{1.0f, -1.0f, -1.0f, 1},
-		{1.0f, -1.0f, 1.0f, 1},
-		{-1.0f, -1.0f, 1.0f, 1},
-		{-1.0f, -1.0f, 1.0f, 1},
-		{-1.0f, -1.0f, -1.0f, 1},
-		{-1.0f, 1.0f, -1.0f, 1},
-		{-1.0f, 1.0f, 1.0f, 1},
+		{ -1.0f, 1.0f, -1.0f, 0.0f, 0.0f },
+		{ 1.0f, 1.0f, -1.0f, 1.0f, 0.0f },
+		{ 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
+		{ -1.0f, 1.0f, 1.0f, 0.0f, 1.0f },
 
-		{1.0f, -1.0f, 1.0f, 1},
-		{1.0f, -1.0f, -1.0f, 1},
-		{1.0f, 1.0f, -1.0f, 1},
-		{1.0f, 1.0f, 1.0f, 1},
+		{ -1.0f, -1.0f, -1.0f, 0.0f, 0.0f },
+		{ 1.0f, -1.0f, -1.0f, 1.0f, 0.0f },
+		{ 1.0f, -1.0f, 1.0f, 1.0f, 1.0f },
+		{ -1.0f, -1.0f, 1.0f, 0.0f, 1.0f },
 
-		{-1.0f, -1.0f, -1.0f, 1},
-		{1.0f, -1.0f, -1.0f, 1},
-		{1.0f, 1.0f, -1.0f, 1},
-		{-1.0f, 1.0f, -1.0f, 1},
+		{ -1.0f, -1.0f, 1.0f, 0.0f, 0.0f },
+		{ -1.0f, -1.0f, -1.0f, 1.0f, 0.0f },
+		{ -1.0f, 1.0f, -1.0f, 1.0f, 1.0f },
+		{ -1.0f, 1.0f, 1.0f, 0.0f, 1.0f },
 
-		{-1.0f, -1.0f, 1.0f, 1},
-		{1.0f, -1.0f, 1.0f, 1},
-		{1.0f, 1.0f, 1.0f, 1},
-		{-1.0f, 1.0f, 1.0f, 1},
+		{ 1.0f, -1.0f, 1.0f, 0.0f, 0.0f },
+		{ 1.0f, -1.0f, -1.0f, 1.0f, 0.0f },
+		{ 1.0f, 1.0f, -1.0f, 1.0f, 1.0f },
+		{ 1.0f, 1.0f, 1.0f, 0.0f, 1.0f },
+
+		{ -1.0f, -1.0f, -1.0f, 0.0f, 0.0f },
+		{ 1.0f, -1.0f, -1.0f, 1.0f, 0.0f },
+		{ 1.0f, 1.0f, -1.0f, 1.0f, 1.0f },
+		{ -1.0f, 1.0f, -1.0f, 0.0f, 1.0f },
+
+		{ -1.0f, -1.0f, 1.0f, 0.0f, 0.0f },
+		{ 1.0f, -1.0f, 1.0f, 1.0f, 0.0f },
+		{ 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
+		{ -1.0f, 1.0f, 1.0f, 0.0f, 1.0f },
 	};
 	ib =
 	{
@@ -135,8 +144,24 @@ LRESULT CALLBACK draw()
 		at -= dir * 0.1;
 	}
 	calcCamera();
+	QueryPerformanceCounter(&t1);
+
 	renderer.render(vb, ib, cb, device);
-	device.RenderToScreen();
+	QueryPerformanceCounter(&t2);
+	double frames = tf.QuadPart / (t2.QuadPart - t1.QuadPart);
+	static double now_time = 0;
+	now_time += 1.0 * (t2.QuadPart - t1.QuadPart) / tf.QuadPart;
+	static int count = 0;
+	count++;
+	static WCHAR tmp[100] = L"FPS:\0";
+	if (now_time >= 1.0)
+	{
+		QueryPerformanceFrequency(&tf);
+		now_time = 0;
+		wsprintf(tmp, L"FPS: %d\0", count);
+		count = 0;
+	}
+	device.RenderToScreen(tmp);
 	return S_OK;
 }
 

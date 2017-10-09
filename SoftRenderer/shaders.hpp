@@ -1,6 +1,8 @@
 #pragma once
 #include "math3d.hpp"
 #include "helpers.hpp"
+#include "sampler.hpp"
+
 
 struct ConstantBuffer
 {
@@ -38,8 +40,22 @@ public:
 class PixelShader
 {
 public:
-	static int shading(VertexShader::VertexOutput& x, ConstantBuffer)
+
+	static int doRGB(vec3 v)
 	{
-		return (0xFF & int(pow(x.pos.z, 8) * 255)) << 16;
+		return
+			int(v.x) << 16 |
+			int(v.y) << 8 |
+			int(v.z);
+
 	}
+
+	__forceinline static int shading(VertexShader::VertexOutput& x, ConstantBuffer)
+	{
+//		return (0xFF & int(pow(x.pos.z, 8) * 255)) << 16;
+		static sampler s0("tex.bmp");
+//		return (int(x.uv.x * 255)<<8) | int(x.uv.y * 255) ;
+		return doRGB(s0.sample(x.uv.x, x.uv.y));
+	}
+
 };

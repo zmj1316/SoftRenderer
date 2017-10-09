@@ -80,6 +80,7 @@
       <OpenMPSupport>true</OpenMPSupport>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
@@ -110,6 +111,7 @@
       <StructMemberAlignment>16Bytes</StructMemberAlignment>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -150,6 +152,7 @@
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="RendererDevice.hpp" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="sampler.hpp" />
     <ClInclude Include="shaders.hpp" />
   </ItemGroup>
   <ItemGroup>

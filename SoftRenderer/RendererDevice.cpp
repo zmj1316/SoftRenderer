@@ -52,8 +52,12 @@ void GDIDevice::DrawPoint(int x, int y, uint32_t color)
 	buffer_[x + y * width_] = color;
 }
 
-void GDIDevice::RenderToScreen()
+void GDIDevice::RenderToScreen(LPWSTR msg)
 {
+	SetBkColor(Memhdc, RGB(0, 0, 0));
+	SetTextColor(Memhdc, RGB(255, 255, 255));
+	TextOut(Memhdc, 20, 2, msg, wcslen(msg));
+
 	SelectObject(Memhdc, now_bitmap);
 	BitBlt(hDC, 0, 0, width_, height_, Memhdc, 0, 0, SRCCOPY);
 	memset(buffer_, 0xFF02F456, sizeof(int) * width_ * height_);

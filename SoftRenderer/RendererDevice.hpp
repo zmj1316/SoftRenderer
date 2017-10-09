@@ -21,7 +21,7 @@ public:
 
 	virtual void DrawPoint(int x, int y, uint32_t color) = 0;
 
-	virtual void RenderToScreen() = 0;
+	virtual void RenderToScreen(LPWSTR) = 0;
 	
 
 protected:
@@ -43,7 +43,7 @@ public:
 	{
 	}
 
-	void RenderToScreen() override;
+	void RenderToScreen(LPWSTR) override;
 protected:
 	uint32_t* buffer_;
 	HDC hDC;

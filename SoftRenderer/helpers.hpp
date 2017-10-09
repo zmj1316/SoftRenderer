@@ -36,3 +36,22 @@ struct has_member_##m{															\
 #define HAS_MEMBER(T, m)	(has_member_##m<T>::value)
 #define MEMBER_TYPE(T, m)	(has_member_##m<T>::type)
 
+static bool fast_judge(const float& a)
+{
+//	byte *t = (byte*)(&a);
+//#if _DEBUG
+//	byte debug[4];
+//	memcpy(debug, t, 8);
+//#endif //_DEBUG
+//	// < 0
+//	if ((t[3] & 0x80) == 0x80) return false;
+//	int exp = (t[3] & 0x7F) << 1 | ((t[2] >> 7) & 0x01);
+//	// > 1
+//	if (exp > 255) return false;
+//	return true;
+//	int i = *(int*)&a;
+//	auto exp = (i >> 23) & 0xFF;
+//	bool sign = ((i >> 31) & 0x01);
+//	return (sign || exp >= 127);
+	return !(a > 0 && a < 1);
+}
