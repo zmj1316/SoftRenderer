@@ -213,6 +213,7 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::RasterizeTriangle(int 
 	float v0x_inv_denom = v0.x * inv_denom;
 	float v0y_inv_denom = -v0.y * inv_denom;
 
+#pragma omp parallel for schedule(dynamic,4)
 	for (int y = rect.top; y < max_y; ++y)
 	{
 		bool in_line = false;
