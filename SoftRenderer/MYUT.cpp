@@ -53,7 +53,7 @@ public:
 	void Create()
 	{
 		g_bThreadSafe = true;
-		InitializeCriticalSectionAndSpinCount(&g_cs, 1000);
+		MY_ASSERT(InitializeCriticalSectionAndSpinCount(&g_cs, 1000));
 		ZeroMemory(&m_state, sizeof(STATE));
 	}
 

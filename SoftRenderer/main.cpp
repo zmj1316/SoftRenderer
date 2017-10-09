@@ -4,6 +4,7 @@
 #include "MYUT.hpp"
 #include "RendererDevice.hpp"
 #include "Renderer.hpp"
+#include "shaders.hpp"
 
 GDIDevice device;
 
@@ -21,25 +22,11 @@ struct vertex_
 	};
 };
 
-struct vertex_output
-{
-	vec4 pos;
-	vec2 uv;
-};
-
-struct ConstantBuffer
-{
-	mat4 WVP;
-};
-
-class PixelShader
-{
-public:
-	static int shading(vertex_output& x, ConstantBuffer)
-	{
-		return (0xFF & int(pow(x.pos.z, 8) * 255)) << 16;
-	}
-};
+//struct vertex_output
+//{
+//	vec4 pos;
+//	vec2 uv;
+//};
 
 std::vector<vertex_> vb;
 std::vector<int> ib;
@@ -51,7 +38,7 @@ static vec3 at{0,0,0};
 static vec3 eye{3,0,5};
 int height, width;
 
-Renderer<ConstantBuffer, vertex_output, PixelShader> renderer;
+Renderer<ConstantBuffer, VertexShader, PixelShader> renderer;
 
 void init()
 {
@@ -111,7 +98,7 @@ void calcCamera()
 {
 	mat4 viewm, projm;
 	viewm = mat4::lookAtLH(eye, at, up);
-	projm = mat4::perspectiveFovLH(3.14 / 3, width / height, 0.5, 100);
+	projm = mat4::perspectiveFovLH(3.14 / 3, float(width) / float(height), 0.5, 100);
 	cb.WVP = viewm * projm;
 }
 

@@ -150,6 +150,7 @@
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="RendererDevice.hpp" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="shaders.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SoftRenderer.rc" />
