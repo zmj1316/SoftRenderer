@@ -158,6 +158,12 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::RasterizeTriangle(int 
 		screen_cords[i].x = (vertices[i].pos.x + 1) / 2 * width_;
 		screen_cords[i].y = (vertices[i].pos.y + 1) / 2 * height_;
 	}
+	if (
+		vertices[0].pos.w < 0 ||
+		vertices[1].pos.w < 0 ||
+		vertices[2].pos.w < 0
+		)
+		return;
 	struct Rect
 	{
 		float bottom, top, left, right;
@@ -199,6 +205,9 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::RasterizeTriangle(int 
 
 	vec2 v0 = screen_cords[1] - screen_cords[0];
 	vec2 v1 = screen_cords[2] - screen_cords[0];
+
+	vec3 normal = cross((vertices[0].worldpos - vertices[1].worldpos).xyz(), (vertices[0].worldpos - vertices[2].worldpos).xyz()).normalized();
+
 	float denom = v0.x * v1.y - v1.x * v0.y;
 	float inv_denom = 1.0f / denom;
 
@@ -287,12 +296,7 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::RasterizeTriangle(int 
 				auto& z = interpolated.pos.z;
 				if (z > 0 && z <= zbuffer[y * width_ + x])
 				{
-					if (
-						vertices[0].pos.w < 0 ||
-						vertices[1].pos.w < 0 ||
-						vertices[2].pos.w < 0
-					)
-						continue;
+
 					in_line = true;
 					zbuffer[y * width_ + x] = z;
 
@@ -305,6 +309,8 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::RasterizeTriangle(int 
 					auto lambda2_c = lambda2 / vertices[1].pos.w * zr;
 					auto lambda3_c = lambda3 / vertices[2].pos.w * zr;
 					interpolated.uv = vertices[0].uv * lambda1_c + vertices[1].uv * lambda2_c + vertices[2].uv * lambda3_c;
+					interpolated.worldpos = vertices[0].worldpos * lambda1_c + vertices[1].worldpos * lambda2_c + vertices[2].worldpos * lambda3_c;
+					interpolated.normal = normal;
 					if constexpr (!std::is_void<decltype(_PixelShader::shading(interpolated, cb_))>::value)
 					{
 						auto ret = _PixelShader::shading(interpolated, cb_);

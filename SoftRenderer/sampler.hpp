@@ -14,6 +14,8 @@ public:
 
 	vec3 sample(float u, float v)
 	{
+		if (u > 1 || v > 1 || u < 0 || v < 0)
+			return vec3(1, 0, 0);
 		return get_bilinear_filtered_pixel_color(u, v);
 	}
 

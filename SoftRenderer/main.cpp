@@ -109,6 +109,8 @@ void calcCamera()
 	viewm = mat4::lookAtLH(eye, at, up);
 	projm = mat4::perspectiveFovLH(3.14 / 3, float(width) / float(height), 0.5, 100);
 	cb.WVP = viewm * projm;
+	cb.view_pos = eye;
+	cb.light_pos = at + vec3(0, 2, 0);
 }
 
 LRESULT CALLBACK draw()
