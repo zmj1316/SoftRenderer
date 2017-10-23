@@ -56,13 +56,13 @@ public:
 
 	}
 
-	__forceinline static int shading(VertexShader::VertexOutput& x, ConstantBuffer& cb)
+	static int shading(VertexShader::VertexOutput& x, ConstantBuffer& cb)
 	{
 //		return (0xFF & int(pow(x.pos.z, 8) * 255)) << 16;
 		static sampler s0("tex.bmp");
 //		return (int(x.uv.x * 255)<<8) | int(x.uv.y * 255) ;
 //		return doRGB(s0.sample(x.uv.x, x.uv.y));
-		auto color = s0.sample(x.uv.x, x.uv.y);
+		const auto color = s0.sample(x.uv.x, x.uv.y);
 		const auto world_pos = x.worldpos.xyz();
 		auto light_dir = world_pos - cb.light_pos;
 		auto view_dir = world_pos - cb.view_pos;

@@ -5,7 +5,7 @@
 
 constexpr float EPSILON = 1e-5f;
 
-template<typename ConstantBuffer, class VertexShader, class PixelShader>
+template <typename ConstantBuffer, class VertexShader, class PixelShader>
 class Renderer
 {
 public:
@@ -29,7 +29,7 @@ public:
 		Clear();
 		IaStage(ib);
 		VSStage(vb);
-//		EarlyZ();
+		EarlyZ();
 		PSStage(render_target);
 	}
 
@@ -65,20 +65,18 @@ protected:
 };
 
 
-
-
-template<typename ConstantBuffer, class VertexShader, class PixelShader>
+template <typename ConstantBuffer, class VertexShader, class PixelShader>
 Renderer<ConstantBuffer, VertexShader, PixelShader>::Renderer() : width_(0), height_(0)
 {
 }
 
 
-template<typename ConstantBuffer, class VertexShader, class PixelShader>
+template <typename ConstantBuffer, class VertexShader, class PixelShader>
 Renderer<ConstantBuffer, VertexShader, PixelShader>::~Renderer()
 {
 }
 
-template<typename ConstantBuffer, class VertexShader, class PixelShader>
+template <typename ConstantBuffer, class VertexShader, class PixelShader>
 void Renderer<ConstantBuffer, VertexShader, PixelShader>::Clear()
 {
 	for (auto&& value : zbuffer)
@@ -87,7 +85,7 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::Clear()
 	}
 }
 
-template<typename ConstantBuffer, class VertexShader, class PixelShader>
+template <typename ConstantBuffer, class VertexShader, class PixelShader>
 void Renderer<ConstantBuffer, VertexShader, PixelShader>::IaStage(const std::vector<int>& ib)
 {
 	MY_ASSERT((ib.size() % 3) == 0);
@@ -117,7 +115,7 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::VSStage(const std::vec
 	}
 }
 
-template<typename ConstantBuffer, class VertexShader, class PixelShader>
+template <typename ConstantBuffer, class VertexShader, class PixelShader>
 void Renderer<ConstantBuffer, VertexShader, PixelShader>::EarlyZ()
 {
 	class EmptyPASS
@@ -162,7 +160,7 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::RasterizeTriangle(int 
 		vertices[0].pos.w < 0 ||
 		vertices[1].pos.w < 0 ||
 		vertices[2].pos.w < 0
-		)
+	)
 		return;
 	struct Rect
 	{
@@ -206,7 +204,8 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::RasterizeTriangle(int 
 	vec2 v0 = screen_cords[1] - screen_cords[0];
 	vec2 v1 = screen_cords[2] - screen_cords[0];
 
-	vec3 normal = cross((vertices[0].worldpos - vertices[1].worldpos).xyz(), (vertices[0].worldpos - vertices[2].worldpos).xyz()).normalized();
+	vec3 normal = cross((vertices[0].worldpos - vertices[1].worldpos).xyz(),
+	                    (vertices[0].worldpos - vertices[2].worldpos).xyz()).normalized();
 
 	float denom = v0.x * v1.y - v1.x * v0.y;
 	float inv_denom = 1.0f / denom;
@@ -226,66 +225,30 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::RasterizeTriangle(int 
 	for (int y = rect.top; y < max_y; ++y)
 	{
 		bool in_line = false;
+		float v2y = y - screen_cords[0].y;
+		float v2x0 = int(rect.left) - screen_cords[0].x;
+		auto v2y_mul_v1x_inv_denom = v2y * v1x_inv_denom;
+		auto v2y_mul_v0x_inv_denom = v2y * v0x_inv_denom;
+
+		auto lambda2_0 = (v2x0 - 1) * v1y_inv_denom + v2y_mul_v1x_inv_denom;
+		auto lambda3_0 = v2y_mul_v0x_inv_denom + (v2x0 - 1) * v0y_inv_denom;
+		auto lambda1_0 = 1.0f - (lambda2_0 + lambda3_0);
 		for (int x = rect.left; x < max_x; ++x)
 		{
-			vec2 p(x, y);
-			vec2 v2 = p - screen_cords[0];
-
-//			bool is_in = true;
-			auto lambda2 = v2.x * v1y_inv_denom + v2.y * v1x_inv_denom;
-//			auto lambda2 = (v2.x * v1.y - v1.x * v2.y) * inv_denom;
-//			if( lambda2 > 1 || lambda2 < 0)
-//			if (fast_judge(lambda2))
-//			{
-//				if (in_line)
-//				{
-//					break;// finish line
-//				}
-//				else
-//				{
-//					continue;
-//				}
-//			}
-			auto lambda3 = v2.y * v0x_inv_denom + v2.x * v0y_inv_denom;
-//			auto lambda3 = (v0.x * v2.y - v2.x * v0.y) * inv_denom;
-//			if (lambda3 > 1 || lambda3 < 0)
-//			if (fast_judge(lambda3))
-//
-//			{
-//				if (in_line)
-//				{
-//					break;// finish line
-//				}
-//				else
-//				{
-//					continue;
-//				}
-//			}
-			auto lambda1 = 1.0f - (lambda2 + lambda3);
-//			if (lambda1 > 1 || lambda1 < 0)
+			lambda2_0 = lambda2_0 + v1y_inv_denom;
+			lambda3_0 = lambda3_0 + v0y_inv_denom;
+			lambda1_0 = lambda1_0 - v1y_inv_denom - v0y_inv_denom;
+			const auto& lambda2 = lambda2_0;
+			const auto& lambda3 = lambda3_0;
+			const auto& lambda1 = lambda1_0;
 			if (fast_judge(lambda1) || fast_judge(lambda2) || fast_judge(lambda3))
 			{
-
 				if (in_line)
 				{
 					break;// finish line
 				}
-				else
-				{
-					continue;
-				}
+				continue;
 			}
-
-//			auto abss = fabs(lambda1) + fabs(lambda2) + fabs(lambda3);
-//			const bool is_in =
-//				fabs(1 - (fabs(lambda1) + fabs(lambda2) + fabs(lambda3))) <= EPSILON;
-//			const bool is_in =
-//				lambda1 > 0 && lambda1 < 1 &&
-//				lambda2 > 0 && lambda2 < 1 &&
-//				lambda3 > 0 && lambda3 < 1;
-//			if (is_in != is_in2)
-//				continue;
-//			if (is_in)
 			{
 				// do
 				VertexOutput interpolated;
@@ -296,11 +259,10 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::RasterizeTriangle(int 
 				auto& z = interpolated.pos.z;
 				if (z > 0 && z <= zbuffer[y * width_ + x])
 				{
-
 					in_line = true;
 					zbuffer[y * width_ + x] = z;
 
-					auto zr = 
+					auto zr =
 						fabs(lambda1 / vertices[0].pos.w) +
 						fabs(lambda2 / vertices[1].pos.w) +
 						fabs(lambda3 / vertices[2].pos.w);
@@ -309,7 +271,8 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::RasterizeTriangle(int 
 					auto lambda2_c = lambda2 / vertices[1].pos.w * zr;
 					auto lambda3_c = lambda3 / vertices[2].pos.w * zr;
 					interpolated.uv = vertices[0].uv * lambda1_c + vertices[1].uv * lambda2_c + vertices[2].uv * lambda3_c;
-					interpolated.worldpos = vertices[0].worldpos * lambda1_c + vertices[1].worldpos * lambda2_c + vertices[2].worldpos * lambda3_c;
+					interpolated.worldpos = vertices[0].worldpos * lambda1_c + vertices[1].worldpos * lambda2_c + vertices[2].worldpos
+						* lambda3_c;
 					interpolated.normal = normal;
 					if constexpr (!std::is_void<decltype(_PixelShader::shading(interpolated, cb_))>::value)
 					{
@@ -318,10 +281,6 @@ void Renderer<ConstantBuffer, VertexShader, PixelShader>::RasterizeTriangle(int 
 					}
 				}
 			}
-//			else if (in_line)
-//			{
-//				break;// finish line
-//			}
 		}
 	}
 }
