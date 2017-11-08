@@ -1,3 +1,7 @@
+// wrap native os api to simple draw pixel api
+// now only win32 supported
+// author:   Key Zhang
+
 #pragma once
 #include <vector>
 
@@ -19,7 +23,7 @@ public:
 		height_ = height;
 	}
 
-	virtual void DrawPoint(int x, int y, uint32_t color) = 0;
+//	virtual void DrawPoint(int x, int y, uint32_t color) = 0;
 
 	virtual void RenderToScreen() = 0;
 	
@@ -37,7 +41,7 @@ public:
 	GDIDevice();
 	~GDIDevice() override;
 	void Resize(int width, int height) override;
-	void DrawPoint(int x, int y, uint32_t color) override;
+	void DrawPoint(int x, int y, uint32_t color);
 
 	void CreateDevice() override
 	{
