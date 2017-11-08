@@ -24,6 +24,9 @@
     <ClCompile Include="RendererDevice.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ScanlineRenderer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="math3d.hpp">
@@ -42,6 +45,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Renderer.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ScanlineRenderer.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

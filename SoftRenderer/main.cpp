@@ -4,6 +4,7 @@
 #include "MYUT.hpp"
 #include "RendererDevice.hpp"
 #include "Renderer.hpp"
+#include "ScanlineRenderer.hpp"
 
 GDIDevice device;
 
@@ -51,7 +52,7 @@ static vec3 at{0,0,0};
 static vec3 eye{3,0,5};
 float height, width;
 
-Renderer<ConstantBuffer, vertex_output, PixelShader> renderer;
+ScanlineRenderer<ConstantBuffer, vertex_output, PixelShader> renderer;
 
 void init()
 {
@@ -115,7 +116,7 @@ void calcCamera()
 	cb.WVP = viewm * projm;
 }
 
-LRESULT CALLBACK draw()
+void handleIO()
 {
 	if (MYUTGetKeys()[VK_UP])
 		at.y += 0.1;
@@ -147,6 +148,11 @@ LRESULT CALLBACK draw()
 		eye -= dir * 0.1;
 		at -= dir * 0.1;
 	}
+}
+
+LRESULT CALLBACK draw()
+{
+	handleIO();
 	calcCamera();
 	renderer.render(vb, ib, cb, device);
 	device.RenderToScreen();
