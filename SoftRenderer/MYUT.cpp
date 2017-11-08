@@ -1,3 +1,7 @@
+// a dxut like toolkit to handle windows events
+// most codes are copied from DXUT
+// author:   Key Zhang
+
 #include "MYUT.hpp"
 #include "helpers.hpp"
 

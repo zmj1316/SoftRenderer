@@ -1,25 +1,22 @@
+// a renderer that simulates GPU pipeline
+// head only due to use of template
+// author:   Key Zhang
+
 #pragma once
 #include "math3d.hpp"
 #include "helpers.hpp"
 #include <vector>
 
+#if _MSC_VER < 1910
+#pragma message("Warning : C++ 17 not supported, some features may missing")
+// zmj: used if constexpr to support different vertex layouts
+#endif
 
 
 template<typename ConstantBuffer, class VertexOutput, class PixelShader>
 class Renderer
 {
 public:
-//	struct ConstantBuffer
-//	{
-//		mat4 WVP; // World View Projection
-//		mat4 view; // World View Projection
-//		mat4 proj; // World View Projection
-//		vec3 lightPos;
-//		vec3 viewPos;
-//	};
-
-
-
 	Renderer();
 	~Renderer();
 
@@ -81,11 +78,14 @@ protected:
 			vb_after_vs_[i].pos.y = vb_after_vs_[i].pos.y / vb_after_vs_[i].pos.w;
 			vb_after_vs_[i].pos.z = vb_after_vs_[i].pos.z / vb_after_vs_[i].pos.w;
 			if (error)
-				vb_after_vs_[i].pos.w = -DBL_MAX;
+				vb_after_vs_[i].pos.w = DBL_MIN;
+#if _MSC_VER >= 1910
 			if constexpr (HAS_MEMBER(T, uv))
 			{
 				vb_after_vs_[i].uv = vb[i].uv;
 			}
+#endif // _MSC_VER 1910
+
 		}
 	}
 
@@ -196,8 +196,10 @@ protected:
 						if (interpolated_w <= 0)
 							continue;
 						zbuffer[y * width_ + x] = z;
+#if _MSC_VER >= 1910
 						interpolated.uv = vertices[0].uv * lambda1_c + vertices[1].uv * lambda2_c + vertices[2].uv * lambda3_c;
 						if constexpr (!std::is_void<decltype(_PixelShader::shading(interpolated, cb_))>::value)
+#endif
 						{
 							auto ret = _PixelShader::shading(interpolated, cb_);
 							render_target.DrawPoint(x, y, ret);
@@ -255,6 +257,7 @@ void Renderer<ConstantBuffer, VertexOutput, PixelShader>::IaStage(const std::vec
 template<typename ConstantBuffer, class VertexOutput, class PixelShader>
 void Renderer<ConstantBuffer,VertexOutput, PixelShader>::EarlyZ()
 {
+#if _MSC_VER >= 1910
 	class EmptyPASS
 	{
 	public:
@@ -268,4 +271,5 @@ void Renderer<ConstantBuffer,VertexOutput, PixelShader>::EarlyZ()
 		auto empry = EmptyPASS();
 		RasterizeTriangle<EmptyPASS>(i, empry);
 	}
+#endif
 }
