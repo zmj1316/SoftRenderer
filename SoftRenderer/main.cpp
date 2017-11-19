@@ -45,14 +45,15 @@ public:
 std::vector<vertex_> vb;
 std::vector<int> ib;
 ConstantBuffer cb;
-
+bool scan = false;
 
 static vec3 up{0,1,0};
 static vec3 at{0,0,0};
 static vec3 eye{3,0,5};
 float height, width;
 
-ScanlineRenderer<ConstantBuffer, vertex_output, PixelShader> renderer;
+Renderer<ConstantBuffer, vertex_output, PixelShader> renderer;
+ScanlineRenderer<ConstantBuffer, vertex_output, PixelShader> scan_renderer;
 
 void init()
 {
@@ -136,6 +137,10 @@ void handleIO()
 	if (MYUTGetKeys()['D'])
 		eye.x -= 0.1;
 
+	scan = false;
+	if (MYUTGetKeys()['Z'])
+		scan = true;
+
 	if (MYUTGetKeys()['Q'])
 	{
 		auto dir = (eye - at).normalized();
@@ -154,7 +159,10 @@ LRESULT CALLBACK draw()
 {
 	handleIO();
 	calcCamera();
-	renderer.render(vb, ib, cb, device);
+	if(scan)
+		scan_renderer.render(vb, ib, cb, device);
+	else
+		renderer.render(vb, ib, cb, device);
 	device.RenderToScreen();
 	return S_OK;
 }
@@ -162,6 +170,7 @@ LRESULT CALLBACK draw()
 LRESULT CALLBACK resize(int w, int h)
 {
 	renderer.resizeRenderTarget(w, h);
+	scan_renderer.resizeRenderTarget(w, h);
 	device.Resize(w, h);
 	height = h;
 	width = w;

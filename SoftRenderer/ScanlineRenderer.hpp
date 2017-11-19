@@ -38,9 +38,10 @@ private:
 
 	struct edge_entry
 	{
-		float x_top;
+		float x_left;
 		float y_top;
 		float dx;
+		uint32_t poly_id;
 	};
 
 	struct active_edge_entry
@@ -55,10 +56,10 @@ private:
 	using InPolyList = std::vector<poly_entry>;
 	using ActiveEdgeTable = std::vector<edge_entry>;
 
-	PolyTable pt_;
-	EdgeTable et_;
-	InPolyList ipl_;
-	ActiveEdgeTable aet_;
+	std::vector<std::vector<poly_entry>> pt_;
+	std::vector<std::vector<edge_entry>> et_;
+	std::vector<poly_entry> ipl_;
+	std::vector<edge_entry> aet_;
 
 	void Clear()
 	{
@@ -70,9 +71,90 @@ private:
 	
 	void buildTable()
 	{
-		for (const auto & tri : triangles_)
+		pt_.clear();
+		et_.clear();
+		pt_.resize(height_);
+		et_.resize(height_);
+		ipl_.clear();
+		aet_.clear();
+		for (int poly_id = 0; poly_id < triangles_.size(); ++poly_id)
 		{
-			
+			auto& tri = triangles_[poly_id];
+			VertexOutput vertices[3];
+			vec2 screen_cords[3];
+			for (int i = 0; i < 3; ++i)
+			{
+				vertices[i] = vb_after_vs_[tri.indices[i]];
+				screen_cords[i].x = (vertices[i].pos.x + 1) / 2 * width_;
+				screen_cords[i].y = (vertices[i].pos.y + 1) / 2 * height_;
+			}
+			struct Rect
+			{
+				float bottom, top, left, right;
+			};
+
+			Rect rect;
+			rect.bottom = 0;
+			rect.top = height_;
+			rect.left = width_;
+			rect.right = 0;
+
+			for (int i = 0; i < 3; ++i)
+			{
+				if (screen_cords[i].x < rect.left) rect.left = screen_cords[i].x;
+				if (screen_cords[i].x > rect.right) rect.right = screen_cords[i].x;
+				if (screen_cords[i].y < rect.top) rect.top = screen_cords[i].y;
+				if (screen_cords[i].y > rect.bottom) rect.bottom = screen_cords[i].y;
+			}
+
+			int y_max_id = 0;
+			for (int i = 1; i < 3; ++i)
+			{
+				if (screen_cords[i].y > screen_cords[y_max_id].y)
+					y_max_id = i;
+			}
+
+			int y_min_id = 0;
+			for (int i = 1; i < 3; ++i)
+			{
+				if (screen_cords[i].y < screen_cords[y_max_id].y)
+					y_min_id = i;
+			}
+
+			poly_entry pe;
+			pe.id = poly_id;
+			pe.flag = false;
+			pe.color = vec3(1,1,1);
+
+			int y_min = std::floorf(screen_cords[y_min_id].y);
+			int y_max = std::floorf(screen_cords[y_max_id].y);
+			if (y_min < 0 || y_min >= height_)
+				continue;
+			pt_[y_min].push_back(pe);
+
+			for (int edge_id = 0; edge_id < 3; ++edge_id)
+			{
+				auto& point0 = screen_cords[edge_id];
+				auto& point1 = screen_cords[(edge_id + 1) % 3];
+				edge_entry ee;
+				float x_left = (std::min)(point0.x, point1.x);
+				float x_right = (std::max)(point0.x, point1.x);
+				float y_top = (std::max)(point0.y, point1.y);
+				float y_buttom = (std::min)(point0.y, point1.y);
+				if (int(y_buttom) < 0 || int(y_buttom) >= height_)
+					continue;
+				ee.poly_id = poly_id;
+				ee.x_left = x_left;
+				ee.y_top = y_top;
+
+				if((  point0.x == x_left && point0.y == y_buttom)
+					||point0.y == x_right && point0.y == y_top)
+					ee.dx = (x_right - x_left) / (y_top - y_buttom);
+				else
+					ee.dx = -(x_right - x_left) / (y_top - y_buttom);
+				
+				et_[y_buttom].push_back(ee);
+			}
 		}
 	}
 
@@ -80,7 +162,30 @@ private:
 	template <class RenderTarget>
 	void PSStage(RenderTarget& render_target)
 	{
-		
+		buildTable();
+		for (int scan_y = 0; scan_y < height_; ++scan_y)
+		{
+			aet_.erase(std::remove_if(aet_.begin(), aet_.end(), [scan_y](const auto& edge)
+			{
+				return edge.y_top < scan_y;
+			}), aet_.end());
+
+			for (auto && active_edge : aet_)
+			{
+				active_edge.x_left += active_edge.dx;
+			}
+
+			for (auto && ee : et_[scan_y])
+			{
+				aet_.push_back(ee);
+			}
+
+			for (auto && active_edge : aet_)
+			{
+				if(active_edge.x_left > 0 && active_edge.x_left < width_)
+					render_target.DrawPoint(active_edge.x_left, scan_y, 0xF * active_edge.poly_id | 0xFFF0FF00);
+			}
+		}
 	}
 	
 };
