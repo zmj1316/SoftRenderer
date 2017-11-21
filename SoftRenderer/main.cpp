@@ -137,9 +137,9 @@ void handleIO()
 	if (MYUTGetKeys()['D'])
 		eye.x -= 0.1;
 
-	scan = false;
+	scan = true;
 	if (MYUTGetKeys()['Z'])
-		scan = true;
+		scan = false;
 
 	if (MYUTGetKeys()['Q'])
 	{

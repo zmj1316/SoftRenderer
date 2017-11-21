@@ -88,6 +88,8 @@ private:
 				screen_cords[i].x = (vertices[i].pos.x + 1) / 2 * width_;
 				screen_cords[i].y = (vertices[i].pos.y + 1) / 2 * height_;
 			}
+			if (vertices[0].pos.w <= 0 || vertices[1].pos.w <= 0 || vertices[2].pos.w <= 0)
+				continue;
 			struct Rect
 			{
 				float bottom, top, left, right;
@@ -128,8 +130,9 @@ private:
 
 			int y_min = std::floorf(screen_cords[y_min_id].y);
 			int y_max = std::floorf(screen_cords[y_max_id].y);
-			if (y_min < 0 || y_min >= height_)
-				continue;
+			//if (y_min < 0 || y_min >= height_)
+			//	continue;
+			y_min = clamp(y_min, 0, height_ - 1);
 			pt_[y_min].push_back(pe);
 
 			for (int edge_id = 0; edge_id < 3; ++edge_id)
@@ -141,18 +144,29 @@ private:
 				float x_right = (std::max)(point0.x, point1.x);
 				float y_top = (std::max)(point0.y, point1.y);
 				float y_buttom = (std::min)(point0.y, point1.y);
-				if (int(y_buttom) < 0 || int(y_buttom) >= height_)
+				if (int(y_buttom) >= height_ || int(y_top) < 0)
 					continue;
+
 				ee.poly_id = poly_id;
 				ee.x_left = x_left;
 				ee.y_top = y_top;
 
+
 				if((  point0.x == x_left && point0.y == y_buttom)
-					||point0.y == x_right && point0.y == y_top)
+					|| 
+					  point0.x == x_right && point0.y == y_top)
 					ee.dx = (x_right - x_left) / (y_top - y_buttom);
 				else
+				{
 					ee.dx = -(x_right - x_left) / (y_top - y_buttom);
-				
+					ee.x_left = x_right;
+				}
+
+				if (int(y_buttom) < 0)
+				{
+					ee.x_left += -int(y_buttom) * ee.dx;
+					y_buttom = 0;
+				}
 				et_[y_buttom].push_back(ee);
 			}
 		}
@@ -167,7 +181,7 @@ private:
 		{
 			aet_.erase(std::remove_if(aet_.begin(), aet_.end(), [scan_y](const auto& edge)
 			{
-				return edge.y_top < scan_y;
+				return int(edge.y_top) <= scan_y;
 			}), aet_.end());
 
 			for (auto && active_edge : aet_)
