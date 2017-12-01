@@ -60,6 +60,7 @@ protected:
 	void IaStage(const std::vector<int>& ib);
 
 	DEF_HAS_MEMBER(uv)
+	DEF_HAS_MEMBER(world_pos)
 
 	template <typename T>
 	void VSStage(const std::vector<T>& vb)
@@ -83,6 +84,11 @@ protected:
 			if constexpr (HAS_MEMBER(T, uv))
 			{
 				vb_after_vs_[i].uv = vb[i].uv;
+			}
+
+			if constexpr (HAS_MEMBER(VertexOutput, world_pos))
+			{
+				vb_after_vs_[i].world_pos = vb[i].pos.xyz();
 			}
 #endif // _MSC_VER 1910
 

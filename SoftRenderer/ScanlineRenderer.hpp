@@ -1,8 +1,9 @@
 #pragma once
 #include "Renderer.hpp"
 #include <vector>
+#include <unordered_map>
 
-template<typename ConstantBuffer, class VertexOutput, class PixelShader>
+template<typename ConstantBuffer, class VertexOutput, class PixelShader, bool LineMode>
 class ScanlineRenderer: public Renderer<ConstantBuffer, VertexOutput, PixelShader>
 {
 public:
@@ -33,14 +34,17 @@ private:
 		vec4 plane;
 		uint32_t id;
 		vec3 color;
+		float y_top;
 		bool flag;
 	};
 
 	struct edge_entry
 	{
 		float x_left;
+		float z_left;
 		float y_top;
 		float dx;
+		float dz;
 		uint32_t poly_id;
 	};
 
@@ -56,6 +60,7 @@ private:
 	using InPolyList = std::vector<poly_entry>;
 	using ActiveEdgeTable = std::vector<edge_entry>;
 
+	std::vector<poly_entry> pt_list;
 	std::vector<std::vector<poly_entry>> pt_;
 	std::vector<std::vector<edge_entry>> et_;
 	std::vector<poly_entry> ipl_;
@@ -77,6 +82,8 @@ private:
 		et_.resize(height_);
 		ipl_.clear();
 		aet_.clear();
+
+		pt_list.clear();
 		for (int poly_id = 0; poly_id < triangles_.size(); ++poly_id)
 		{
 			auto& tri = triangles_[poly_id];
@@ -126,8 +133,9 @@ private:
 			poly_entry pe;
 			pe.id = poly_id;
 			pe.flag = false;
-			pe.color = vec3(1,1,1);
-
+			pe.color = vertices[0].world_pos;
+			pe.y_top = screen_cords[y_max_id].y;
+			pt_list.push_back(pe);
 			int y_min = std::floorf(screen_cords[y_min_id].y);
 			int y_max = std::floorf(screen_cords[y_max_id].y);
 			//if (y_min < 0 || y_min >= height_)
@@ -167,11 +175,26 @@ private:
 					ee.x_left += -int(y_buttom) * ee.dx;
 					y_buttom = 0;
 				}
+
+				if(point0.y == y_buttom)
+				{
+					ee.z_left = vertices[edge_id].pos.z;
+					ee.dz = (vertices[(edge_id + 1) % 3].pos.z - vertices[edge_id].pos.z) / (y_top - y_buttom);
+				}
+				else
+				{
+					ee.z_left = vertices[(edge_id + 1) % 3].pos.z;
+					ee.dz = -(vertices[(edge_id + 1) % 3].pos.z - vertices[edge_id].pos.z) / (y_top - y_buttom);
+				}
+
 				et_[y_buttom].push_back(ee);
 			}
 		}
 	}
 
+	uint32_t doRGB(vec3 color){
+		return ((uint32_t)color.x * 0xFF) << 16 | ((uint32_t)color.y*0xFF) << 8 | ((uint32_t)color.z*0xFF);
+	}
 
 	template <class RenderTarget>
 	void PSStage(RenderTarget& render_target)
@@ -184,9 +207,15 @@ private:
 				return int(edge.y_top) <= scan_y;
 			}), aet_.end());
 
+			ipl_.erase(std::remove_if(ipl_.begin(), ipl_.end(), [scan_y](const auto& pe)
+			{
+				return int(pe.y_top) <= scan_y;
+			}), ipl_.end());
+
 			for (auto && active_edge : aet_)
 			{
 				active_edge.x_left += active_edge.dx;
+				active_edge.z_left += active_edge.dz;
 			}
 
 			for (auto && ee : et_[scan_y])
@@ -194,10 +223,63 @@ private:
 				aet_.push_back(ee);
 			}
 
-			for (auto && active_edge : aet_)
+			for (auto && p : pt_[scan_y])
 			{
-				if(active_edge.x_left > 0 && active_edge.x_left < width_)
-					render_target.DrawPoint(active_edge.x_left, scan_y, 0xF * active_edge.poly_id | 0xFFF0FF00);
+				ipl_.push_back(p);
+			}
+
+			if(aet_.size() > 0)
+			{
+				struct segment
+				{
+					float l, r;
+					float zl, zr;
+				};
+
+				std::unordered_map<uint32_t, segment> segments;
+				for (auto & active_edge : aet_)
+				{
+					if(segments.find(active_edge.poly_id) == segments.end())
+					{
+						segment seg;
+						seg.l = active_edge.x_left;
+						seg.zl = active_edge.z_left;
+						segments.insert_or_assign(active_edge.poly_id, seg);
+					}
+					else
+					{
+						auto& seg = segments[active_edge.poly_id];
+						seg.r = active_edge.x_left;
+						seg.zr = active_edge.z_left;
+						if(seg.l > seg.r)
+						{
+							std::swap(seg.l, seg.r);
+							std::swap(seg.zl, seg.zr);
+						}
+					}
+				}
+
+	#if _MSC_VER >= 1910
+				//if constexpr(LineMode)
+				//	for (auto && active_edge : aet_)
+				//	{
+				//		if(active_edge.x_left > 0 && active_edge.x_left < width_)
+				//		{
+				//			int left = std::floorf(active_edge.x_left);
+				//			int right = std::floorf(active_edge.x_left + active_edge.dx);
+				//			//if (!std::isfinite(active_edge.dx))
+				//			//	continue;
+				//			if (left > right)
+				//				std::swap(left, right);
+				//			if (left < 0 || right > width_ - 1)
+				//				continue;
+				//			for (int i = left; i <= right; ++i)
+				//			{
+				//				render_target.DrawPoint(i, scan_y, 0xF * active_edge.poly_id | 0xFFF0FF00);
+				//			}
+				//		}
+				//	}
+	#endif // _MSC_VER 1910
 			}
 		}
 	}

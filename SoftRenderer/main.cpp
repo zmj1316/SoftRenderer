@@ -26,6 +26,7 @@ struct vertex_output
 {
 	vec4 pos;
 	vec2 uv;
+	vec3 world_pos;
 };
 
 struct ConstantBuffer
@@ -53,7 +54,7 @@ static vec3 eye{3,0,5};
 float height, width;
 
 Renderer<ConstantBuffer, vertex_output, PixelShader> renderer;
-ScanlineRenderer<ConstantBuffer, vertex_output, PixelShader> scan_renderer;
+ScanlineRenderer<ConstantBuffer, vertex_output, PixelShader, true> scan_renderer;
 
 void init()
 {
