@@ -47,7 +47,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -91,6 +91,7 @@
       <AdditionalIncludeDirectories>DirectXMath\Inc;./</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -138,6 +139,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="mmdformat\Pmx.cpp" />
     <ClCompile Include="MYUT.cpp" />
     <ClCompile Include="RendererDevice.cpp" />
     <ClCompile Include="ScanlineRenderer.cpp" />
@@ -145,6 +147,10 @@
   <ItemGroup>
     <ClInclude Include="helpers.hpp" />
     <ClInclude Include="math3d.hpp" />
+    <ClInclude Include="mmdformat\EncodingHelper.h" />
+    <ClInclude Include="mmdformat\Pmd.h" />
+    <ClInclude Include="mmdformat\Pmx.h" />
+    <ClInclude Include="mmdformat\Vmd.h" />
     <ClInclude Include="MYUT.hpp" />
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="RendererDevice.hpp" />

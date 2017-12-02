@@ -60,10 +60,15 @@ private:
 	using InPolyList = std::vector<poly_entry>;
 	using ActiveEdgeTable = std::vector<edge_entry>;
 
+	struct active_poly_entry {
+		uint32_t id;
+		float z;
+	};
+
 	std::vector<poly_entry> pt_list;
 	std::vector<std::vector<poly_entry>> pt_;
 	std::vector<std::vector<edge_entry>> et_;
-	std::vector<poly_entry> ipl_;
+	std::unordered_map<uint32_t,float> ipl_;
 	std::vector<edge_entry> aet_;
 
 	void Clear()
@@ -200,6 +205,7 @@ private:
 	void PSStage(RenderTarget& render_target)
 	{
 		buildTable();
+		ipl_.clear();
 		for (int scan_y = 0; scan_y < height_; ++scan_y)
 		{
 			aet_.erase(std::remove_if(aet_.begin(), aet_.end(), [scan_y](const auto& edge)
@@ -207,10 +213,10 @@ private:
 				return int(edge.y_top) <= scan_y;
 			}), aet_.end());
 
-			ipl_.erase(std::remove_if(ipl_.begin(), ipl_.end(), [scan_y](const auto& pe)
-			{
-				return int(pe.y_top) <= scan_y;
-			}), ipl_.end());
+			//ipl_.erase(std::remove_if(ipl_.begin(), ipl_.end(), [scan_y](const auto& pe)
+			//{
+			//	return int(pe.second.y_top) <= scan_y;
+			//}), ipl_.end());
 
 			for (auto && active_edge : aet_)
 			{
@@ -223,10 +229,10 @@ private:
 				aet_.push_back(ee);
 			}
 
-			for (auto && p : pt_[scan_y])
-			{
-				ipl_.push_back(p);
-			}
+			//for (auto && p : pt_[scan_y])
+			//{
+			//	ipl_.push_back(p);
+			//}
 
 			if(aet_.size() > 0)
 			{
@@ -260,25 +266,49 @@ private:
 				}
 
 	#if _MSC_VER >= 1910
-				//if constexpr(LineMode)
-				//	for (auto && active_edge : aet_)
-				//	{
-				//		if(active_edge.x_left > 0 && active_edge.x_left < width_)
-				//		{
-				//			int left = std::floorf(active_edge.x_left);
-				//			int right = std::floorf(active_edge.x_left + active_edge.dx);
-				//			//if (!std::isfinite(active_edge.dx))
-				//			//	continue;
-				//			if (left > right)
-				//				std::swap(left, right);
-				//			if (left < 0 || right > width_ - 1)
-				//				continue;
-				//			for (int i = left; i <= right; ++i)
-				//			{
-				//				render_target.DrawPoint(i, scan_y, 0xF * active_edge.poly_id | 0xFFF0FF00);
-				//			}
-				//		}
-				//	}
+
+				if constexpr(LineMode){
+					auto prev_left = 0.f;
+					std::sort(aet_.begin(), aet_.end(), [](const auto& x, const auto & y) {return x.x_left < y.x_left; });
+					for (auto && active_edge : aet_)
+					{
+						if(active_edge.x_left > prev_left && active_edge.x_left < width_)
+						{
+
+							int left = std::floorf(active_edge.x_left);
+							int draw_id = -1;
+							float z = 1;
+							for (const auto& pair : ipl_) {
+								if(pair.second < z) {
+									z = pair.second;
+									draw_id = pair.first;
+								}
+							}
+							if (draw_id >= 0) {
+								
+							//if (!std::isfinite(active_edge.dx))
+							//	continue;
+//							if (left > right)
+//								std::swap(left, right);
+//							if (left < 0 || right > width_ - 1)
+//								continue;
+								for (int i = prev_left; i <= left; ++i)
+								{
+									render_target.DrawPoint(i, scan_y, int(0xFF * z));
+								}
+							}
+
+							prev_left = left;
+							int pid = active_edge.poly_id;
+							if (ipl_.find(pid) != ipl_.end()) {
+								ipl_.erase(pid);
+							}
+							else {
+								ipl_.insert_or_assign(pid, active_edge.z_left);
+							}
+						}
+					}
+				}
 	#endif // _MSC_VER 1910
 			}
 		}

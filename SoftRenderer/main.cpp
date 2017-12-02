@@ -5,6 +5,7 @@
 #include "RendererDevice.hpp"
 #include "Renderer.hpp"
 #include "ScanlineRenderer.hpp"
+#include "mmdformat/Pmx.h"
 
 GDIDevice device;
 
@@ -48,9 +49,9 @@ std::vector<int> ib;
 ConstantBuffer cb;
 bool scan = false;
 
-static vec3 up{0,1,0};
-static vec3 at{0,0,0};
-static vec3 eye{3,0,5};
+static vec3 up{0,-1,0};
+static vec3 at{0,10,0};
+static vec3 eye{30,0,50};
 float height, width;
 
 Renderer<ConstantBuffer, vertex_output, PixelShader> renderer;
@@ -58,56 +59,79 @@ ScanlineRenderer<ConstantBuffer, vertex_output, PixelShader, true> scan_renderer
 
 void init()
 {
-	vb =
+	pmx::PmxModel model_;
+	std::wstring filename = L"TDA.pmx";
+	std::ifstream stream = std::ifstream(filename, std::ios_base::binary);
+	model_.Read(&stream);
+	auto vs = model_.vertices.get();
+	for (int i = 0; i < model_.vertex_count; ++i)
 	{
-		{-1.0f, 1.0f, -1.0f, 1},
-		{1.0f, 1.0f, -1.0f,1},
-		{1.0f, 1.0f, 1.0f ,1},
-		{-1.0f, 1.0f, 1.0f, 1},
-		{-1.0f, -1.0f, -1.0f, 1},
-		{1.0f, -1.0f, -1.0f, 1},
-		{1.0f, -1.0f, 1.0f, 1},
-		{-1.0f, -1.0f, 1.0f, 1},
-		{-1.0f, -1.0f, 1.0f, 1},
-		{-1.0f, -1.0f, -1.0f, 1},
-		{-1.0f, 1.0f, -1.0f, 1},
-		{-1.0f, 1.0f, 1.0f, 1},
-
-		{1.0f, -1.0f, 1.0f, 1},
-		{1.0f, -1.0f, -1.0f, 1},
-		{1.0f, 1.0f, -1.0f, 1},
-		{1.0f, 1.0f, 1.0f, 1},
-
-		{-1.0f, -1.0f, -1.0f, 1},
-		{1.0f, -1.0f, -1.0f, 1},
-		{1.0f, 1.0f, -1.0f, 1},
-		{-1.0f, 1.0f, -1.0f, 1},
-
-		{-1.0f, -1.0f, 1.0f, 1},
-		{1.0f, -1.0f, 1.0f, 1},
-		{1.0f, 1.0f, 1.0f, 1},
-		{-1.0f, 1.0f, 1.0f, 1},
-	};
-	ib =
+		auto it = vs + i;
+		//std::unique_ptr<pmx::PmxVertexSkinning> p2(std::move(it->skinning));
+		auto sk = (pmx::PmxVertexSkinningBDEF1*) it->skinning.get();
+		auto sk2 = (pmx::PmxVertexSkinningBDEF2*) it->skinning.get();
+		auto sk4 = (pmx::PmxVertexSkinningBDEF4*) it->skinning.get();
+		auto sks = (pmx::PmxVertexSkinningSDEF*) it->skinning.get();
+		vertex_ v;
+		v.pos.x = it->positon[0];
+		v.pos.y = it->positon[1];
+		v.pos.z = it->positon[2];
+		vb.push_back(v);
+	}
+	for (int i = 0; i < model_.index_count; ++i)
 	{
-		3,1,0,
-		2,1,3,
-
-		6,4,5,
-		7,4,6,
-
-		11,9,8,
-		10,9,11,
-
-		14,12,13,
-		15,12,14,
-
-		19,17,16,
-		18,17,19,
-
-		22,20,21,
-		23,20,22
-	};
+		ib.push_back(model_.indices.get()[i]);
+	}
+//	vb =
+//	{
+//		{-1.0f, 1.0f, -1.0f, 1},
+//		{1.0f, 1.0f, -1.0f,1},
+//		{1.0f, 1.0f, 1.0f ,1},
+//		{-1.0f, 1.0f, 1.0f, 1},
+//		{-1.0f, -1.0f, -1.0f, 1},
+//		{1.0f, -1.0f, -1.0f, 1},
+//		{1.0f, -1.0f, 1.0f, 1},
+//		{-1.0f, -1.0f, 1.0f, 1},
+//		{-1.0f, -1.0f, 1.0f, 1},
+//		{-1.0f, -1.0f, -1.0f, 1},
+//		{-1.0f, 1.0f, -1.0f, 1},
+//		{-1.0f, 1.0f, 1.0f, 1},
+//
+//		{1.0f, -1.0f, 1.0f, 1},
+//		{1.0f, -1.0f, -1.0f, 1},
+//		{1.0f, 1.0f, -1.0f, 1},
+//		{1.0f, 1.0f, 1.0f, 1},
+//
+//		{-1.0f, -1.0f, -1.0f, 1},
+//		{1.0f, -1.0f, -1.0f, 1},
+//		{1.0f, 1.0f, -1.0f, 1},
+//		{-1.0f, 1.0f, -1.0f, 1},
+//
+//		{-1.0f, -1.0f, 1.0f, 1},
+//		{1.0f, -1.0f, 1.0f, 1},
+//		{1.0f, 1.0f, 1.0f, 1},
+//		{-1.0f, 1.0f, 1.0f, 1},
+//	};
+//	ib =
+//	{
+//		3,1,0,
+//		2,1,3,
+//
+//		6,4,5,
+//		7,4,6,
+//
+//		11,9,8,
+//		10,9,11,
+//
+//		14,12,13,
+//		15,12,14,
+//
+//		19,17,16,
+//		18,17,19,
+//
+//		22,20,21,
+//		23,20,22
+//	};
 }
 
 void calcCamera()
@@ -138,9 +162,9 @@ void handleIO()
 	if (MYUTGetKeys()['D'])
 		eye.x -= 0.1;
 
-	scan = true;
+	scan = false;
 	if (MYUTGetKeys()['Z'])
-		scan = false;
+		scan = true;
 
 	if (MYUTGetKeys()['Q'])
 	{
