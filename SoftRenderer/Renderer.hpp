@@ -9,7 +9,7 @@
 
 #if _MSC_VER < 1910
 #pragma message("Warning : C++ 17 not supported, some features may missing")
-// zmj: used if constexpr to support different vertex layouts
+// zmj: used `if constexpr` to support different vertex layouts
 #endif
 
 

@@ -43,7 +43,9 @@ void GDIDevice::Resize(int width, int height)
 	
 
 	now_bitmap = CreateDIBSection(Memhdc, &bmp_info, DIB_RGB_COLORS, (void**)&buffer_, NULL, 0);
-
+	QueryPerformanceFrequency(&tf);
+	QueryPerformanceCounter(&t0);
+	QueryPerformanceCounter(&t1);
 }
 
 void GDIDevice::DrawPoint(int x, int y, uint32_t color)
@@ -54,6 +56,27 @@ void GDIDevice::DrawPoint(int x, int y, uint32_t color)
 
 void GDIDevice::RenderToScreen()
 {
+
+	QueryPerformanceFrequency(&tf);
+	QueryPerformanceCounter(&t1);
+	static double now_time = 0;
+	now_time += 1.0 * (t1.QuadPart - t0.QuadPart) / tf.QuadPart;
+	t0 = t1;
+	static wchar_t tmp[100] = L"FPS:\0";
+	static int count = 0;
+	count++;
+	if (now_time >= 1.0)
+	{
+		QueryPerformanceFrequency(&tf);
+		now_time = 0;
+		wsprintf(tmp, L"FPS: %d\0", count);
+		count = 0;
+	}
+	// 设置文字背景色
+	SetBkColor(Memhdc, RGB(0, 0, 0));
+	// 设置文字颜色
+	SetTextColor(Memhdc, RGB(255, 255, 255));
+	TextOut(Memhdc, 20, 0, tmp, wcslen(tmp));
 	SelectObject(Memhdc, now_bitmap);
 	BitBlt(hDC, 0, 0, width_, height_, Memhdc, 0, 0, SRCCOPY);
 	memset(buffer_, 0xFF02F456, sizeof(int) * width_ * height_);

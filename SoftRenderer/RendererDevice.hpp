@@ -56,6 +56,8 @@ protected:
 	HBITMAP now_bitmap;
 
 	void Release();
+
+	LARGE_INTEGER t0, t1, tf;
 };
 
 #endif // _WIN32

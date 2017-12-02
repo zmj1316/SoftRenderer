@@ -1,7 +1,7 @@
 #pragma once
 #include "Renderer.hpp"
 #include <vector>
-#include <unordered_map>
+#include <map>
 
 template<typename ConstantBuffer, class VertexOutput, class PixelShader, bool LineMode>
 class ScanlineRenderer: public Renderer<ConstantBuffer, VertexOutput, PixelShader>
@@ -68,7 +68,7 @@ private:
 	std::vector<poly_entry> pt_list;
 	std::vector<std::vector<poly_entry>> pt_;
 	std::vector<std::vector<edge_entry>> et_;
-	std::unordered_map<uint32_t,float> ipl_;
+	std::multimap<float, uint32_t> ipl_;
 	std::vector<edge_entry> aet_;
 
 	void Clear()
@@ -208,103 +208,57 @@ private:
 		ipl_.clear();
 		for (int scan_y = 0; scan_y < height_; ++scan_y)
 		{
-			aet_.erase(std::remove_if(aet_.begin(), aet_.end(), [scan_y](const auto& edge)
-			{
-				return int(edge.y_top) <= scan_y;
-			}), aet_.end());
-
-			//ipl_.erase(std::remove_if(ipl_.begin(), ipl_.end(), [scan_y](const auto& pe)
-			//{
-			//	return int(pe.second.y_top) <= scan_y;
-			//}), ipl_.end());
-
 			for (auto && active_edge : aet_)
 			{
 				active_edge.x_left += active_edge.dx;
 				active_edge.z_left += active_edge.dz;
 			}
-
 			for (auto && ee : et_[scan_y])
 			{
 				aet_.push_back(ee);
 			}
+			aet_.erase(std::remove_if(aet_.begin(), aet_.end(), [scan_y](const auto& edge)
+			{
+				return int(edge.y_top) <= scan_y;
+			}), aet_.end());
 
-			//for (auto && p : pt_[scan_y])
+			//ipl_.erase(std::remove_if(ipl_.begin(), ipl_.end(), [scan_y,this](auto& pe)
 			//{
-			//	ipl_.push_back(p);
-			//}
+			//	return int(this->pt_list[pe.first].y_top) <= scan_y;
+			//}), ipl_.end());
+
+
 
 			if(aet_.size() > 0)
 			{
-				struct segment
-				{
-					float l, r;
-					float zl, zr;
-				};
-
-				std::unordered_map<uint32_t, segment> segments;
-				for (auto & active_edge : aet_)
-				{
-					if(segments.find(active_edge.poly_id) == segments.end())
-					{
-						segment seg;
-						seg.l = active_edge.x_left;
-						seg.zl = active_edge.z_left;
-						segments.insert_or_assign(active_edge.poly_id, seg);
-					}
-					else
-					{
-						auto& seg = segments[active_edge.poly_id];
-						seg.r = active_edge.x_left;
-						seg.zr = active_edge.z_left;
-						if(seg.l > seg.r)
-						{
-							std::swap(seg.l, seg.r);
-							std::swap(seg.zl, seg.zr);
-						}
-					}
-				}
-
-	#if _MSC_VER >= 1910
-
+#if _MSC_VER >= 1910
 				if constexpr(LineMode){
-					auto prev_left = 0.f;
+					// sort the active edges by left_x
 					std::sort(aet_.begin(), aet_.end(), [](const auto& x, const auto & y) {return x.x_left < y.x_left; });
+					auto prev_left = (std::max)(int(aet_[0].x_left),0);
 					for (auto && active_edge : aet_)
 					{
-						if(active_edge.x_left > prev_left && active_edge.x_left < width_)
+						if(active_edge.x_left >= prev_left && active_edge.x_left < width_)
 						{
-
 							int left = std::floorf(active_edge.x_left);
-							int draw_id = -1;
-							float z = 1;
-							for (const auto& pair : ipl_) {
-								if(pair.second < z) {
-									z = pair.second;
-									draw_id = pair.first;
-								}
-							}
-							if (draw_id >= 0) {
-								
-							//if (!std::isfinite(active_edge.dx))
-							//	continue;
-//							if (left > right)
-//								std::swap(left, right);
-//							if (left < 0 || right > width_ - 1)
-//								continue;
+							if (ipl_.size() > 0) {
+								auto z = ipl_.begin()->first;
 								for (int i = prev_left; i <= left; ++i)
 								{
-									render_target.DrawPoint(i, scan_y, int(0xFF * z));
+									render_target.DrawPoint(i, scan_y, int(0xFF * z * z));
 								}
 							}
 
 							prev_left = left;
 							int pid = active_edge.poly_id;
-							if (ipl_.find(pid) != ipl_.end()) {
-								ipl_.erase(pid);
+							auto it = std::find_if(ipl_.begin(), ipl_.end(), [pid](const auto& pair) {return pair.second == pid; });
+							if(it == ipl_.end())
+							{
+								ipl_.insert(std::make_pair(active_edge.z_left, pid));
 							}
-							else {
-								ipl_.insert_or_assign(pid, active_edge.z_left);
+							else
+							{
+								ipl_.erase(it);
 							}
 						}
 					}
