@@ -75,7 +75,7 @@ void init()
 		vertex_ v;
 		v.pos.x = it->positon[0];
 		v.pos.y = -it->positon[1];
-		v.pos.z = it->positon[2];
+		v.pos.z = -it->positon[2];
 		vb.push_back(v);
 	}
 	for (int i = 0; i < model_.index_count; ++i)

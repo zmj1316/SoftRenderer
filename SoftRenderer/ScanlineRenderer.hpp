@@ -205,7 +205,6 @@ private:
 	void PSStage(RenderTarget& render_target)
 	{
 		buildTable();
-		ipl_.clear();
 		for (int scan_y = 0; scan_y < height_; ++scan_y)
 		{
 			for (auto && active_edge : aet_)
@@ -245,7 +244,7 @@ private:
 								auto z = ipl_.begin()->first;
 								for (int i = prev_left; i <= left; ++i)
 								{
-									render_target.DrawPoint(i, scan_y, int(0xFF * z * z));
+									render_target.DrawPoint(i, scan_y, int(0xFF * ipl_.begin()->second));
 								}
 							}
 
