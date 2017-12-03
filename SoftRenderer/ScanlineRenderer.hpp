@@ -36,6 +36,7 @@ private:
 		vec3 color;
 		float y_top;
 		bool flag;
+		float z;
 	};
 
 	struct edge_entry
@@ -100,8 +101,7 @@ private:
 				screen_cords[i].x = (vertices[i].pos.x + 1) / 2 * width_;
 				screen_cords[i].y = (vertices[i].pos.y + 1) / 2 * height_;
 			}
-			if (vertices[0].pos.w <= 0 || vertices[1].pos.w <= 0 || vertices[2].pos.w <= 0)
-				continue;
+
 			struct Rect
 			{
 				float bottom, top, left, right;
@@ -140,12 +140,19 @@ private:
 			pe.flag = false;
 			pe.color = vertices[0].world_pos;
 			pe.y_top = screen_cords[y_max_id].y;
+			pe.z = (vertices[0].pos.z + vertices[1].pos.z + vertices[2].pos.z) / 3;
 			pt_list.push_back(pe);
 			int y_min = std::floorf(screen_cords[y_min_id].y);
 			int y_max = std::floorf(screen_cords[y_max_id].y);
 			//if (y_min < 0 || y_min >= height_)
 			//	continue;
 			y_min = clamp(y_min, 0, height_ - 1);
+			if (vertices[0].pos.w <= 0 || vertices[1].pos.w <= 0 || vertices[2].pos.w <= 0)
+			{
+				pe.z = 100;
+				pt_[y_min].push_back(pe);
+				continue;
+			}
 			pt_[y_min].push_back(pe);
 
 			for (int edge_id = 0; edge_id < 3; ++edge_id)
@@ -183,15 +190,15 @@ private:
 
 				if(point0.y == y_buttom)
 				{
-					ee.z_left = vertices[edge_id].pos.z;
+					//ee.z_left = vertices[edge_id].pos.z;
 					ee.dz = (vertices[(edge_id + 1) % 3].pos.z - vertices[edge_id].pos.z) / (y_top - y_buttom);
 				}
 				else
 				{
-					ee.z_left = vertices[(edge_id + 1) % 3].pos.z;
+					//ee.z_left = vertices[(edge_id + 1) % 3].pos.z;
 					ee.dz = -(vertices[(edge_id + 1) % 3].pos.z - vertices[edge_id].pos.z) / (y_top - y_buttom);
 				}
-
+				ee.z_left = pe.z;
 				et_[y_buttom].push_back(ee);
 			}
 		}
@@ -210,7 +217,6 @@ private:
 			for (auto && active_edge : aet_)
 			{
 				active_edge.x_left += active_edge.dx;
-				active_edge.z_left += active_edge.dz;
 			}
 			for (auto && ee : et_[scan_y])
 			{
@@ -240,25 +246,26 @@ private:
 						if(active_edge.x_left >= prev_left && active_edge.x_left < width_)
 						{
 							int left = std::floorf(active_edge.x_left);
-							if (ipl_.size() > 0) {
+							if (ipl_.size() > 0 && ipl_.begin()->first < 1) {
 								auto z = ipl_.begin()->first;
+								auto color = 0x303030 * ipl_.begin()->second;
 								for (int i = prev_left; i <= left; ++i)
 								{
-									render_target.DrawPoint(i, scan_y, int(0xFF * ipl_.begin()->second));
+									render_target.DrawPoint(i, scan_y, int(color));
 								}
 							}
 
 							prev_left = left;
-							int pid = active_edge.poly_id;
-							auto it = std::find_if(ipl_.begin(), ipl_.end(), [pid](const auto& pair) {return pair.second == pid; });
-							if(it == ipl_.end())
-							{
-								ipl_.insert(std::make_pair(active_edge.z_left, pid));
-							}
-							else
-							{
-								ipl_.erase(it);
-							}
+						}
+						int pid = active_edge.poly_id;
+						auto it = std::find_if(ipl_.begin(), ipl_.end(), [pid](const auto& pair) {return pair.second == pid; });
+						if(it == ipl_.end())
+						{
+							ipl_.insert(std::make_pair(active_edge.z_left, pid));
+						}
+						else
+						{
+							ipl_.erase(it);
 						}
 					}
 				}
