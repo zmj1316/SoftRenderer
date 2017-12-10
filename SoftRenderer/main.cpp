@@ -52,13 +52,18 @@ bool scan = false;
 static vec3 up{0,1,0};
 static vec3 at{0,1,0};
 static vec3 eye{3,0,5};
+static float distance = 5.0f;
 float height, width;
 
 Renderer<ConstantBuffer, vertex_output, PixelShader> renderer;
 ScanlineRenderer<ConstantBuffer, vertex_output, PixelShader, true> scan_renderer;
+LARGE_INTEGER t0, t1, tf;
 
 void init()
 {
+	QueryPerformanceFrequency(&tf);
+	QueryPerformanceCounter(&t0);
+	QueryPerformanceCounter(&t1);
 	pmx::PmxModel model_;
 	std::wstring filename = L"TDA.pmx";
 	std::ifstream stream = std::ifstream(filename, std::ios_base::binary);
@@ -145,23 +150,27 @@ void calcCamera()
 
 void handleIO()
 {
+
+	QueryPerformanceFrequency(&tf);
+	QueryPerformanceCounter(&t1);
+	auto delta = 0.01 * (t1.QuadPart - t0.QuadPart) / tf.QuadPart;
 	if (MYUTGetKeys()[VK_UP])
-		at.y += 0.1;
+		at.y -= delta;
 	if (MYUTGetKeys()[VK_DOWN])
-		at.y -= 0.1;
+		at.y += delta;
 	if (MYUTGetKeys()[VK_LEFT])
-		at.x += 0.1;
+		at.x += delta;
 	if (MYUTGetKeys()[VK_RIGHT])
-		at.x -= 0.1;
+		at.x -= delta;
 
 	if (MYUTGetKeys()['W'])
-		eye.y += 0.1;
+		eye.y -= delta;
 	if (MYUTGetKeys()['S'])
-		eye.y -= 0.1;
+		eye.y += delta;
 	if (MYUTGetKeys()['A'])
-		eye.x += 0.1;
+		eye.x += delta;
 	if (MYUTGetKeys()['D'])
-		eye.x -= 0.1;
+		eye.x -= delta;
 
 	scan = true;
 	if (MYUTGetKeys()['Z'])
@@ -170,15 +179,21 @@ void handleIO()
 	if (MYUTGetKeys()['Q'])
 	{
 		auto dir = (eye - at).normalized();
-		eye += dir * 0.1;
-		at += dir * 0.1;
+		eye += dir * delta;
+		at += dir * delta;
+
+		distance += delta;
 	}
 	if (MYUTGetKeys()['E'])
 	{
 		auto dir = (eye - at).normalized();
-		eye -= dir * 0.1;
-		at -= dir * 0.1;
+		eye -= dir * delta;
+		at -= dir * delta;
+
+		distance -= delta;
 	}
+
+
 }
 
 LRESULT CALLBACK draw()

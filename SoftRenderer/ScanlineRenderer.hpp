@@ -147,7 +147,10 @@ private:
 			//if (y_min < 0 || y_min >= height_)
 			//	continue;
 			y_min = clamp(y_min, 0, height_ - 1);
-			if (vertices[0].pos.w <= 0 || vertices[1].pos.w <= 0 || vertices[2].pos.w <= 0)
+
+			auto normal = cross(vertices[0].pos.xyz() - vertices[1].pos.xyz(), vertices[0].pos.xyz() - vertices[2].pos.xyz());
+
+			if (vertices[0].pos.w <= 0 || vertices[1].pos.w <= 0 || vertices[2].pos.w <= 0 || normal.z >= 0)
 			{
 				pe.z = 100;
 				pt_[y_min].push_back(pe);
@@ -243,16 +246,19 @@ private:
 					auto prev_left = (std::max)(int(aet_[0].x_left),0);
 					for (auto && active_edge : aet_)
 					{
-						if(active_edge.x_left >= prev_left && active_edge.x_left < width_)
+						if(active_edge.x_left >= prev_left && prev_left < width_)
 						{
 							int left = std::floorf(active_edge.x_left);
 							if (ipl_.size() > 0 && ipl_.begin()->first < 1) {
 								auto z = ipl_.begin()->first;
 								auto color = 0x303030 * ipl_.begin()->second;
-								for (int i = prev_left; i <= left; ++i)
+								for (int i = prev_left; i <= (std::min)(left,width_ - 1); ++i)
 								{
 									render_target.DrawPoint(i, scan_y, int(color));
 								}
+//								if (left >= width_ - 1)
+//									break;
+
 							}
 
 							prev_left = left;
