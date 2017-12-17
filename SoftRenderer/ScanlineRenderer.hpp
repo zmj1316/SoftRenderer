@@ -35,42 +35,73 @@ private:
 		uint32_t id;
 		vec3 color;
 		float y_top;
-		bool flag;
+		//bool flag = false;
 		float z;
 	};
 
 	struct edge_entry
 	{
 		float x_left;
+		int y_top;
 		float z_left;
-		float y_top;
 		float dx;
 		float dz;
 		uint32_t poly_id;
 	};
 
-	struct active_edge_entry
-	{
-		int xl;
-		float dxl, dyl;
-
-	};
+	//struct active_edge_entry
+	//{
+	//	int xl;
+	//	float dxl, dyl;
+	//};
 
 	using PolyTable = std::vector<std::vector<poly_entry>>;
 	using EdgeTable = std::vector<std::vector<edge_entry>>;
 	using InPolyList = std::vector<poly_entry>;
 	using ActiveEdgeTable = std::vector<edge_entry>;
 
-	struct active_poly_entry {
-		uint32_t id;
-		float z;
-	};
+	//struct active_poly_entry {
+	//	uint32_t id;
+	//	float z;
+	//};
 
 	std::vector<poly_entry> pt_list;
 	std::vector<std::vector<poly_entry>> pt_;
 	std::vector<std::vector<edge_entry>> et_;
 	std::multimap<float, uint32_t> ipl_;
 	std::vector<edge_entry> aet_;
+
+
+	//class IPLSpeedUp
+	//{
+	//private:
+	//	std::map<uint32_t, float> index_to_z;
+
+
+	//public:
+	//	void Clear()
+	//	{
+	//		
+	//	}
+
+	//	void Update(uint32_t poly_id, float z)
+	//	{
+	//		
+	//	}
+
+	//	void Insert(uint32_t poly_id, float z)
+	//	{
+	//		index_to_z.insert_or_assign(poly_id, z);
+	//	}
+
+	//	void Remove(uint32_t poly_id)
+	//	{
+	//		index_to_z.erase(poly_id);
+	//	}
+
+	//	float nearest_z;
+	//	uint32_t nearest_poly_id;
+	//};
 
 	void Clear()
 	{
@@ -90,7 +121,8 @@ private:
 		aet_.clear();
 
 		pt_list.clear();
-		for (int poly_id = 0; poly_id < triangles_.size(); ++poly_id)
+
+		for (size_t poly_id = 0; poly_id < triangles_.size(); ++poly_id)
 		{
 			auto& tri = triangles_[poly_id];
 			VertexOutput vertices[3];
@@ -136,27 +168,27 @@ private:
 			}
 
 			poly_entry pe;
-			pe.id = poly_id;
-			pe.flag = false;
-			pe.color = vertices[0].world_pos;
+			//pe.id = poly_id;
+//			pe.flag = false;
+//			pe.color = vertices[0].world_pos;
 			pe.y_top = screen_cords[y_max_id].y;
 			pe.z = (vertices[0].pos.z + vertices[1].pos.z + vertices[2].pos.z) / 3;
 			pt_list.push_back(pe);
-			int y_min = std::floorf(screen_cords[y_min_id].y);
-			int y_max = std::floorf(screen_cords[y_max_id].y);
+			//int y_min = std::floorf(screen_cords[y_min_id].y);
+			//int y_max = std::floorf(screen_cords[y_max_id].y);
 			//if (y_min < 0 || y_min >= height_)
 			//	continue;
-			y_min = clamp(y_min, 0, height_ - 1);
+			//y_min = clamp(y_min, 0, height_ - 1);
 
 			auto normal = cross(vertices[0].pos.xyz() - vertices[1].pos.xyz(), vertices[0].pos.xyz() - vertices[2].pos.xyz());
 
 			if (vertices[0].pos.w <= 0 || vertices[1].pos.w <= 0 || vertices[2].pos.w <= 0 || normal.z >= 0)
 			{
 				pe.z = 100;
-				pt_[y_min].push_back(pe);
+				//pt_[y_min].push_back(pe);
 				continue;
 			}
-			pt_[y_min].push_back(pe);
+			//pt_[y_min].push_back(pe);
 
 			for (int edge_id = 0; edge_id < 3; ++edge_id)
 			{
@@ -203,6 +235,7 @@ private:
 				}
 				ee.z_left = pe.z;
 				et_[y_buttom].push_back(ee);
+
 			}
 		}
 	}
@@ -215,6 +248,7 @@ private:
 	void PSStage(RenderTarget& render_target)
 	{
 		buildTable();
+
 		for (int scan_y = 0; scan_y < height_; ++scan_y)
 		{
 			for (auto && active_edge : aet_)
@@ -230,12 +264,6 @@ private:
 				return int(edge.y_top) <= scan_y;
 			}), aet_.end());
 
-			//ipl_.erase(std::remove_if(ipl_.begin(), ipl_.end(), [scan_y,this](auto& pe)
-			//{
-			//	return int(this->pt_list[pe.first].y_top) <= scan_y;
-			//}), ipl_.end());
-
-
 
 			if(aet_.size() > 0)
 			{
@@ -244,6 +272,7 @@ private:
 					// sort the active edges by left_x
 					std::sort(aet_.begin(), aet_.end(), [](const auto& x, const auto & y) {return x.x_left < y.x_left; });
 					auto prev_left = (std::max)(int(aet_[0].x_left),0);
+
 					for (auto && active_edge : aet_)
 					{
 						if(active_edge.x_left >= prev_left && prev_left < width_)
@@ -256,9 +285,6 @@ private:
 								{
 									render_target.DrawPoint(i, scan_y, int(color));
 								}
-//								if (left >= width_ - 1)
-//									break;
-
 							}
 
 							prev_left = left;

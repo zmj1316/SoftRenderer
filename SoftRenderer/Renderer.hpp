@@ -35,7 +35,7 @@ public:
 		Clear();
 		IaStage(ib);
 		VSStage(vb);
-		EarlyZ();
+//		EarlyZ();
 		PSStage(render_target);
 	}
 
