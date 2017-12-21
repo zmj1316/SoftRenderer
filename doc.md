@@ -58,11 +58,15 @@
 * 遍历 `aet` 中的每条边，着色对应区间，修改 `ipl`
 
 
-## 项目编译
+## 项目编译和代码
+
+项目采用 git 作为 scm ， branch 为 other （因为基于之前的项目修改而来） 
 
 项目使用了 C++ 17 部分 feature，建议采用 Visual Studio 2017 编译；
 
-采用 Visual Studio 2015 可能会缺失部分功能，不影响课程相关展示效果；
+采用 Visual Studio 2015\2013 编译可能会缺失部分功能，不影响课程相关展示效果；
+
+默认编译开启 AVX2 优化，如果旧机器无法运行需要修改编译选项
 
 本项目配置了 visual studio online 在线编译，如有需要, 请将 visual studio online 账号 email to zmj1316@gmail.com 并注明原因，我会开通该账号的访问权限；
 
