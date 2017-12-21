@@ -268,7 +268,9 @@ private:
 			if(aet_.size() > 0)
 			{
 #if _MSC_VER >= 1910
-				if constexpr(LineMode){
+				if constexpr(LineMode)
+#endif // _MSC_VER 1910
+				{
 					// sort the active edges by left_x
 					std::sort(aet_.begin(), aet_.end(), [](const auto& x, const auto & y) {return x.x_left < y.x_left; });
 					auto prev_left = (std::max)(int(aet_[0].x_left),0);
@@ -301,7 +303,6 @@ private:
 						}
 					}
 				}
-	#endif // _MSC_VER 1910
 			}
 		}
 	}
