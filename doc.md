@@ -49,7 +49,7 @@
 
 #### PSStage
 
-* buildTable:   将边和多边形加到 `edge_table` 和 `poly_list` 中, 每条边计算出 `edge_entry` 放到其对应的 `y_buttom` 的 slot 中，剔除的多边形直接丢弃
+* buildTable:   将边和多边形加到 `edge_table` 和 `poly_list` 中, 每条边计算出 `edge_entry` 放到其对应的 `y_buttom` 的 slot 中，背面剔除的多边形直接丢弃
 * 对屏幕逐行扫描：
 * 更新 `aet` 中每条边的 `x_left` 
 * 从 `edge_table` 添加新加入的边到 `aet`
@@ -80,3 +80,4 @@
 
 ## 性能指标
 
+i5-4570 3.6Ghz 处理器， 在视野内绘制 2w+ 个三角面片， 开启背面剔除， 稳定 94 帧
