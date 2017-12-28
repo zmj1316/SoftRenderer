@@ -53,6 +53,7 @@ protected:
 	std::vector<polygon_> triangles_;
 	std::vector<VertexOutput> vb_after_vs_;
 	std::vector<float> zbuffer;
+
 	int width_;
 	int height_;
 
@@ -80,6 +81,8 @@ protected:
 			vb_after_vs_[i].pos.z = vb_after_vs_[i].pos.z / vb_after_vs_[i].pos.w;
 			if (error)
 				vb_after_vs_[i].pos.w = DBL_MIN;
+
+			vb_after_vs_[i].normal = vb[i].normal;
 #if _MSC_VER >= 1910
 			if constexpr (HAS_MEMBER(T, uv))
 			{
@@ -202,6 +205,7 @@ protected:
 						if (interpolated_w <= 0)
 							continue;
 						zbuffer[y * width_ + x] = z;
+						interpolated.normal = vertices[0].normal * lambda1_c + vertices[1].normal * lambda2_c + vertices[2].normal * lambda3_c;
 #if _MSC_VER >= 1910
 						interpolated.uv = vertices[0].uv * lambda1_c + vertices[1].uv * lambda2_c + vertices[2].uv * lambda3_c;
 						if constexpr (!std::is_void<decltype(_PixelShader::shading(interpolated, cb_))>::value)

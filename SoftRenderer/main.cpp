@@ -13,6 +13,7 @@ GDIDevice device;
 struct vertex_
 {
 	vec4 pos;
+	vec3 normal;
 
 	vertex_(float x, float y, float z, float w): pos(x, y, z, w)
 	{
@@ -27,20 +28,29 @@ struct vertex_output
 {
 	vec4 pos;
 	vec2 uv;
-	vec3 world_pos;
+	vec3 world_pos; 
+	vec3 normal;
 };
 
 struct ConstantBuffer
 {
 	mat4 WVP;
+	vec3 light_dir;
 };
 
 class PixelShader
 {
 public:
-	static int shading(vertex_output& x, ConstantBuffer)
+
+	static uint32_t doRGB(vec3 color) {
+		color = clamp(color, { 0,0,0 }, { 1,1,1 });
+		return ((uint32_t)(color.x * 0xFF)) << 16 | ((uint32_t)(color.y * 0xFF)) << 8 | ((uint32_t)(color.z * 0xFF));
+	}
+
+	static uint32_t shading(vertex_output& x, ConstantBuffer cb)
 	{
-		return (0xFF & int(pow(x.pos.z * x.pos.z, 8) * 255)) << 16;
+		//return (0xFF & int(pow(x.pos.z * x.pos.z, 8) * 255)) << 16;
+		return doRGB(vec3(x.normal.dot(cb.light_dir)));
 	}
 };
 
@@ -81,6 +91,10 @@ void init()
 		v.pos.x = it->positon[0];
 		v.pos.y = -it->positon[1];
 		v.pos.z = -it->positon[2];
+
+		v.normal.x = it->normal[0];
+		v.normal.y = -it->normal[1];
+		v.normal.z = -it->normal[2];
 		vb.push_back(v);
 	}
 	for (int i = 0; i < model_.index_count; ++i)
@@ -146,6 +160,7 @@ void calcCamera()
 	viewm = mat4::lookAtLH(eye, at, up);
 	projm = mat4::perspectiveFovLH(3.14 / 3, width / height, 0.5, 1000);
 	cb.WVP = viewm * projm;
+	cb.light_dir = vec3(1, 1, 5).normalized();
 }
 
 void handleIO()

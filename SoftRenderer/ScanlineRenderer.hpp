@@ -37,6 +37,7 @@ private:
 		float y_top;
 		//bool flag = false;
 		float z;
+		vec3 normal;
 	};
 
 	struct edge_entry
@@ -173,16 +174,16 @@ private:
 //			pe.color = vertices[0].world_pos;
 			pe.y_top = screen_cords[y_max_id].y;
 			pe.z = (vertices[0].pos.z + vertices[1].pos.z + vertices[2].pos.z) / 3;
-			pt_list.push_back(pe);
 			//int y_min = std::floorf(screen_cords[y_min_id].y);
 			//int y_max = std::floorf(screen_cords[y_max_id].y);
 			//if (y_min < 0 || y_min >= height_)
 			//	continue;
 			//y_min = clamp(y_min, 0, height_ - 1);
-
+			pe.normal = ((vertices[0].normal + vertices[1].normal + vertices[2].normal) / 3).normalized();
+			pt_list.push_back(pe);
 			auto normal = cross(vertices[0].pos.xyz() - vertices[1].pos.xyz(), vertices[0].pos.xyz() - vertices[2].pos.xyz());
 
-			if (vertices[0].pos.w <= 0 || vertices[1].pos.w <= 0 || vertices[2].pos.w <= 0 || normal.z >= 0)
+			if (vertices[0].pos.w <= 0 || vertices[1].pos.w <= 0 || vertices[2].pos.w <= 0 || normal.z > 0)
 			{
 				pe.z = 100;
 				//pt_[y_min].push_back(pe);
@@ -241,7 +242,8 @@ private:
 	}
 
 	uint32_t doRGB(vec3 color){
-		return ((uint32_t)color.x * 0xFF) << 16 | ((uint32_t)color.y*0xFF) << 8 | ((uint32_t)color.z*0xFF);
+		color = clamp(color, { 0,0,0 }, { 1,1,1 });
+		return ((uint32_t)(color.x * 0xFF)) << 16 | ((uint32_t)(color.y*0xFF)) << 8 | ((uint32_t)(color.z*0xFF));
 	}
 
 	template <class RenderTarget>
@@ -283,9 +285,10 @@ private:
 							if (ipl_.size() > 0 && ipl_.begin()->first < 1) {
 								auto z = ipl_.begin()->first;
 								auto color = 0x303030 * ipl_.begin()->second;
+								float diffuse = pt_list[ipl_.begin()->second].normal.dot(cb_.light_dir);
 								for (int i = prev_left; i <= (std::min)(left,width_ - 1); ++i)
 								{
-									render_target.DrawPoint(i, scan_y, int(color));
+									render_target.DrawPoint(i, scan_y, doRGB(vec3(diffuse)));
 								}
 							}
 
