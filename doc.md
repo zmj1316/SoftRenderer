@@ -15,6 +15,8 @@
 
 本项目配置了 visual studio online 在线编译，如有需要, 请将 visual studio online 账号 email to zmj1316@gmail.com 并注明，我会开通该账号的访问权限；
 
+prebuilt 内包含了预先编译的二进制文件以及编译的log；运行需要 vs 2015 的 C++ runtime。
+
 
 
 ## 操作
@@ -23,7 +25,7 @@
 * WASD 移动摄像机
 * 上下左右方向键 移动camera目标
 * QE 控制摄像机前后
-* Z 切换到 z buffer 模式渲染带透视矫正插值后的结果（光滑的normal效果）
+* Z 切换到 z buffer 模式渲染带透视矫正插值后的结果（光滑的normal效果,无背面剔除）
 
 ## 优化
 
@@ -65,7 +67,7 @@ i5-4570 3.6Ghz 处理器， 在视野内绘制 2w+ （77979 个 index， 合计 
 ### 绘制循环
 
 * 处理 IO 事件
-* 根据 camera 信息创建 World View Projection 矩阵，传入 Constant Buffer
+* 根据 camera 信息创建 World * View * Projection 矩阵，传入 Constant Buffer
 * 将 vertex buffer, index buffer, constant buffer 传给 renderer 进行绘制
 * 将绘制结果画到屏幕上（ Output-Merger  ）
 
@@ -80,15 +82,15 @@ i5-4570 3.6Ghz 处理器， 在视野内绘制 2w+ （77979 个 index， 合计 
 #### VSStage
 
 * 每个顶点乘以 WVP 矩阵到投影空间
-* 只做剔除，不做裁剪： z < 0 的顶点在camera后面，会影响归一化，所以用w的值标记为剔除
+* 只做剔除，不做裁剪： z < 0 的顶点在camera后面，会影响归一化，将 w 的值置负标记为剔除
 * 归一化除法到 cvv 
 
 #### PSStage
 
-* buildTable:   将边和多边形加到 `edge_table` 和 `poly_list` 中, 每条边计算出 `edge_entry` 放到其对应的 `y_buttom` 的 slot 中，背面剔除的多边形直接丢弃
+* buildTable:   将边和多边形加到 `edge_table` 和 `poly_list` 中, 对 `edge_table`： 每条边计算得到 `edge_entry` 放到其对应的 `y_buttom` 的 slot 中（根据扫描线的行编号进行桶排序），被剔除（包括背面剔除）的多边形的边直接丢弃
 * 对屏幕逐行扫描：
-* 更新 `aet` 中每条边的 `x_left` 
+* 更新 `aet` 中每条边的 `x_left` （+= dx)
 * 从 `edge_table` 添加新加入的边到 `aet`
-* 从 `aet` 删除扫描完成的边
-* 对 `aet` 排序
+* 从 `aet` 删除扫描完成的边（ 根据边的 `y_top` 和当前扫描线行号)
+* 对 `aet` 按 `x_left` 排序，方便从左到右依次计算区间
 * 遍历 `aet` 中的每条边，着色对应区间（用Normal和LightDir计算简单漫反射），修改 `ipl`

@@ -60,8 +60,8 @@ ConstantBuffer cb;
 bool scan = false;
 
 static vec3 up{0,1,0};
-static vec3 at{0,1,0};
-static vec3 eye{3,0,5};
+static vec3 at{0,-5,0};
+static vec3 eye{4,-10,20};
 static float distance = 5.0f;
 float height, width;
 
